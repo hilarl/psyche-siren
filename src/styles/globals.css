@@ -1,0 +1,72 @@
+@import "tailwindcss";
+
+@theme {
+  /* Clean zinc dark theme */
+  --color-background: 9 9 11;        /* zinc-950 */
+  --color-foreground: 212 212 216;   /* zinc-300 */
+  --color-card: 24 24 27;            /* zinc-800 */
+  --color-card-foreground: 212 212 216;
+  --color-popover: 24 24 27;
+  --color-popover-foreground: 212 212 216;
+  --color-primary: 244 244 245;      /* zinc-100 */
+  --color-primary-foreground: 9 9 11;
+  --color-secondary: 39 39 42;       /* zinc-700 */
+  --color-secondary-foreground: 212 212 216;
+  --color-muted: 39 39 42;           /* zinc-700 */
+  --color-muted-foreground: 161 161 170; /* zinc-400 */
+  --color-accent: 39 39 42;
+  --color-accent-foreground: 212 212 216;
+  --color-destructive: 220 38 38;
+  --color-destructive-foreground: 244 244 245;
+  --color-border: 39 39 42;          /* zinc-700 */
+  --color-input: 24 24 27;           /* zinc-800 */
+  --color-ring: 161 161 170;         /* zinc-400 */
+
+  --radius: 0.5rem;
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--color-border));
+  }
+  
+  body {
+    background-color: hsl(var(--color-background));
+    color: hsl(var(--color-foreground));
+  }
+}
+
+@layer components {
+  /* Button variants */
+  .btn-ghost {
+    background-color: transparent;
+    color: hsl(var(--color-foreground));
+  }
+  
+  .btn-ghost:hover {
+    background-color: hsl(var(--color-muted));
+  }
+
+  /* Card backgrounds */
+  .bg-card {
+    background-color: hsl(var(--color-card));
+  }
+  
+  .bg-muted {
+    background-color: hsl(var(--color-muted));
+  }
+
+  /* Text colors */
+  .text-primary {
+    color: hsl(var(--color-primary));
+  }
+  
+  .text-muted-foreground {
+    color: hsl(var(--color-muted-foreground));
+  }
+
+  /* Borders */
+  .border-border {
+    border-color: hsl(var(--color-border));
+  }
+}
