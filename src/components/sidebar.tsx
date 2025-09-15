@@ -95,7 +95,7 @@ export function Sidebar() {
                     <BrainIcon className="h-3 w-3 text-zinc-400" weight="fill" />
                   </div>
                   <div>
-                    <h1 className="text-sm font-medium text-zinc-100">Psyche Computer</h1>
+                    <h1 className="text-sm font-medium text-zinc-100">Siren Computer</h1>
                     <p className="text-xs text-zinc-400">Creative Intelligence</p>
                   </div>
                 </div>
