@@ -5,7 +5,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     
     // Use HTTP endpoint for server-to-server communication
-    const response = await fetch('http://34.171.189.134:8080/chat/completions', {
+    const response = await fetch('http://35.195.32.163:8001/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
 
 export async function GET() {
   try {
-    const response = await fetch('http://34.171.189.134:8080/health')
+    const response = await fetch('http://35.195.32.163:8444/health')
     const data = await response.json()
     return NextResponse.json(data)
   } catch (error) {
