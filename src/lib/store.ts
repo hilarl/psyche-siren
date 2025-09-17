@@ -1,12 +1,32 @@
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 
+export interface AudioFile {
+  file: File
+  name: string
+  duration?: number
+  url: string
+  analysisResult?: AudioAnalysisResult
+}
+
+export interface AudioAnalysisResult {
+  tempo?: number
+  key?: string
+  mood?: string
+  energy?: number
+  valence?: number
+  genres?: string[]
+  instruments?: string[]
+  summary?: string
+}
+
 export interface Message {
   id: string
   role: 'user' | 'assistant'
   content: string
   timestamp: Date
   images?: string[]
+  audioFiles?: AudioFile[]
   analysisType?: string
   emotionalMarkers?: string[]
   psychologicalPatterns?: string[]
@@ -207,6 +227,8 @@ export const useAppStore = create<AppState>()(
 
       // Actions
       createNewSession: (type) => {
+        console.log('Store createNewSession called with type:', type) // ADDED: Debug log
+        
         const analysisTypeNames = {
           'personality': 'Personality Profile',
           'creative': 'Creative Assessment',
@@ -223,6 +245,8 @@ export const useAppStore = create<AppState>()(
           type,
           conversationState: createDefaultConversationState()
         }
+        
+        console.log('Created session with type:', newSession.type) // ADDED: Debug log
         
         set((state) => ({
           sessions: [newSession, ...state.sessions],
@@ -437,7 +461,21 @@ export const useAppStore = create<AppState>()(
       saveSessionsToStorage: () => {
         try {
           const { sessions } = get()
-          localStorage.setItem('psyche-siren-sessions', JSON.stringify(sessions))
+          // Filter out non-serializable properties before saving
+          const serializableSessions = sessions.map(session => ({
+            ...session,
+            messages: session.messages.map(msg => ({
+              ...msg,
+              // Remove File objects and other non-serializable properties
+              audioFiles: msg.audioFiles?.map(audio => ({
+                name: audio.name,
+                duration: audio.duration,
+                analysisResult: audio.analysisResult
+                // Exclude file and url as they're not serializable
+              }))
+            }))
+          }))
+          localStorage.setItem('psyche-siren-sessions', JSON.stringify(serializableSessions))
         } catch (error) {
           console.error('Failed to save sessions to storage:', error)
         }

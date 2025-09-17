@@ -11,7 +11,16 @@ import {
   Sparkle,
   CircleNotch,
   WarningCircle,
-  Lightbulb
+  Microphone,
+  MusicNote,
+  Play,
+  Pause,
+  Stop,
+  Upload,
+  Waveform,
+  TrashSimple,
+  Eye,
+  EyeSlash
 } from "@phosphor-icons/react"
 import { toast } from "sonner"
 
@@ -24,310 +33,53 @@ import {
   cn, 
   isValidImageFile, 
   fileToBase64, 
-  ANALYSIS_PROMPTS, 
+  PSYCHE_SIREN_PROMPTS,
   CONVERSATION_STARTERS,
-  validateResponse,
-  createSafeRedirectResponse,
-  assessResponseQuality,
-  PSYCHOLOGICAL_REDIRECTS
+  validatePsychologyAnalysis,
+  createSafeAnalysisResponse,
+  correctAnalysisLanguage,
+  createAnalysisPrompt
 } from "@/lib/utils"
 
-// CUTTING-EDGE: Context-aware conversation starter generation
-function generateContextualStarters(
-  currentSession: any, 
-  allSessions: any[], 
-  sessionType: string
-): string[] {
-  const starters: string[] = []
-  
-  // 1. Fresh session with history - continuation patterns
-  if (currentSession.messages.length === 0 && allSessions.length > 0) {
-    const recentSessions = allSessions.slice(0, 3)
-    const recentTopics = extractRecentTopics(recentSessions)
-    const daysSinceLastSession = getDaysBetween(allSessions[0]?.updatedAt, new Date())
-    
-    // Continuation from recent themes
-    if (recentTopics.includes('childhood') && !recentTopics.includes('family')) {
-      starters.push("Continue exploring those childhood patterns we discussed")
-    }
-    
-    if (recentTopics.includes('creative') && daysSinceLastSession > 3) {
-      starters.push("Reflect on your creative process since our last conversation")
-    }
-    
-    if (recentTopics.includes('attachment') && sessionType === 'personality') {
-      starters.push("Examine how your attachment patterns showed up this week")
-    }
-    
-    // Time-sensitive reconnection
-    if (daysSinceLastSession > 7) {
-      starters.push("Share what's been on your mind since we last explored together")
-    } else if (daysSinceLastSession > 14) {
-      starters.push("Catch me up on your psychological landscape over the past few weeks")
-    }
-  }
-  
-  // 2. Session-specific intelligent starters
-  const userHistory = analyzeUserHistory(allSessions)
-  
-  switch (sessionType) {
-    case 'personality':
-      if (userHistory.frequentPatterns.includes('trauma') && !userHistory.recentTopics.includes('healing')) {
-        starters.push("Explore how you've been processing difficult experiences lately")
-      }
-      if (userHistory.attachmentStyle === 'avoidant') {
-        starters.push("Examine a recent situation where you felt emotionally distant")
-      }
-      break
-      
-    case 'creative':
-      if (userHistory.creativeBlocks > 2) {
-        starters.push("Understand what's been blocking your creative expression recently")
-      }
-      if (userHistory.hasDiscussed.includes('inspiration')) {
-        starters.push("Analyze how your creative inspiration patterns have evolved")
-      }
-      break
-      
-    case 'music':
-      if (userHistory.emotionalRegulation && userHistory.recentTopics.includes('stress')) {
-        starters.push("Explore how you've been using music to manage stress")
-      }
-      starters.push("Analyze a song that's been meaningful to you lately")
-      break
-      
-    case 'label-insights':
-      if (userHistory.hasDiscussed.includes('feedback')) {
-        starters.push("Examine how you've been handling creative feedback recently")
-      }
-      starters.push("Analyze your collaboration style in recent creative projects")
-      break
-  }
-  
-  // 3. Fallback to enhanced defaults if nothing contextual
-  if (starters.length === 0) {
-    return getDefaultStarters(sessionType, userHistory)
-  }
-  
-  return starters.slice(0, 3) // Return top 3 most relevant
+// Audio file types - defined locally to avoid serialization issues
+interface AudioFile {
+  file: File
+  name: string
+  duration?: number
+  url: string
+  analysisResult?: AudioAnalysisResult
 }
 
-// Helper functions for contextual analysis
-function extractRecentTopics(sessions: any[]): string[] {
-  const allMessages = sessions.flatMap(s => s.messages || [])
-  const recentMessages = allMessages.slice(-12) // Last 12 messages
-  
-  const topics: string[] = []
-  recentMessages.forEach(msg => {
-    if (msg.psychologicalPatterns) {
-      topics.push(...msg.psychologicalPatterns)
-    }
-  })
-  
-  return [...new Set(topics)] // Remove duplicates
+interface AudioAnalysisResult {
+  tempo?: number
+  key?: string
+  mood?: string
+  energy?: number
+  valence?: number
+  genres?: string[]
+  instruments?: string[]
+  summary?: string
+  danceability?: number
+  acousticness?: number
+  speechiness?: number
+  liveness?: number
+  loudness?: number
 }
 
-function analyzeUserHistory(sessions: any[]) {
-  const allMessages = sessions.flatMap(s => s.messages || [])
-  const userMessages = allMessages.filter(m => m.role === 'user')
-  
-  const patterns = userMessages.flatMap(m => m.psychologicalPatterns || [])
-  const emotions = userMessages.flatMap(m => m.emotionalMarkers || [])
-  const recentMessages = userMessages.slice(-6)
-  
-  return {
-    frequentPatterns: getFrequentItems(patterns, 2),
-    hasDiscussed: [...new Set(patterns)],
-    recentTopics: extractRecentTopics(sessions.slice(0, 2)),
-    emotionalPatterns: getFrequentItems(emotions, 2),
-    attachmentStyle: inferAttachmentStyle(patterns, emotions),
-    creativeBlocks: countOccurrences(patterns, 'creative') + countOccurrences(patterns, 'block'),
-    emotionalRegulation: patterns.includes('emotional') || emotions.includes('calm') || emotions.includes('anxious')
-  }
+// Audio validation utility
+function isValidAudioFile(file: File): boolean {
+  const validTypes = [
+    'audio/mp3', 'audio/mpeg', 
+    'audio/wav', 'audio/wave',
+    'audio/m4a', 'audio/mp4',
+    'audio/aac', 'audio/ogg', 
+    'audio/webm', 'audio/flac'
+  ]
+  const maxSize = 50 * 1024 * 1024 // 50MB
+  return validTypes.includes(file.type) && file.size <= maxSize
 }
 
-function getFrequentItems(items: string[], minCount: number): string[] {
-  const counts: Record<string, number> = {}
-  items.forEach(item => {
-    counts[item] = (counts[item] || 0) + 1
-  })
-  
-  return Object.entries(counts)
-    .filter(([_, count]) => count >= minCount)
-    .map(([item, _]) => item)
-}
-
-function inferAttachmentStyle(patterns: string[], emotions: string[]): string | null {
-  if (patterns.includes('abandonment') || emotions.includes('anxious')) {
-    return 'anxious'
-  }
-  if (patterns.includes('control') || emotions.includes('distant')) {
-    return 'avoidant'
-  }
-  if (patterns.includes('vulnerability') && emotions.includes('safe')) {
-    return 'secure'
-  }
-  return null
-}
-
-function countOccurrences(array: string[], term: string): number {
-  return array.filter(item => item.toLowerCase().includes(term.toLowerCase())).length
-}
-
-function getDaysBetween(date1: Date | string, date2: Date): number {
-  if (!date1) return 0
-  const d1 = new Date(date1)
-  const d2 = new Date(date2)
-  const diffTime = Math.abs(d2.getTime() - d1.getTime())
-  return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-}
-
-function getDefaultStarters(sessionType: string, userHistory: any): string[] {
-  // Enhanced defaults based on user history
-  const defaults: Record<string, string[]> = {
-    personality: [
-      userHistory.attachmentStyle 
-        ? `Explore how your ${userHistory.attachmentStyle} attachment patterns show up currently`
-        : CONVERSATION_STARTERS.GENTLE_OPENING,
-      CONVERSATION_STARTERS.CHILDHOOD_BRIDGE,
-      CONVERSATION_STARTERS.ATTACHMENT_EXPLORATION
-    ],
-    creative: [
-      userHistory.creativeBlocks > 0 
-        ? "Examine what your creative blocks reveal about your psychological patterns"
-        : CONVERSATION_STARTERS.CREATIVE_FOCUS,
-      CONVERSATION_STARTERS.INFLUENCE_EXPLORATION,
-      CONVERSATION_STARTERS.IDENTITY_FORMATION
-    ],
-    music: [
-      userHistory.emotionalRegulation
-        ? "Analyze how you've been using music for emotional balance"
-        : "Explore your earliest meaningful musical memory and its psychological significance",
-      "Understand what your musical preferences reveal about your attachment patterns",
-      "Examine how music helps you process emotions"
-    ],
-    'label-insights': [
-      "Examine how you handle creative feedback and what patterns this reveals",
-      "Identify what collaborative environment brings out your best creative work", 
-      "Analyze your relationship with creative control and autonomy"
-    ]
-  }
-  
-  return defaults[sessionType] || [CONVERSATION_STARTERS.GENTLE_OPENING]
-}
-
-// CUTTING-EDGE: Smart follow-up suggestions
-function generateSmartFollowUps(messages: any[], sessionType: string): string[] {
-  if (messages.length < 2) return []
-  
-  const lastUserMessage = messages.filter(m => m.role === 'user').pop()
-  if (!lastUserMessage) return []
-  
-  const followUps: string[] = []
-  const patterns = lastUserMessage.psychologicalPatterns || []
-  const emotions = lastUserMessage.emotionalMarkers || []
-  
-  // Pattern-based follow-ups
-  if (patterns.includes('childhood') && !patterns.includes('family')) {
-    followUps.push("Tell me more about your family dynamics during that time")
-  }
-  
-  if (patterns.includes('creativity') && emotions.includes('frustrated')) {
-    followUps.push("What do you think is blocking your creative expression?")
-  }
-  
-  if (patterns.includes('relationship') && !emotions.includes('safe')) {
-    followUps.push("How did that relationship dynamic affect your sense of security?")
-  }
-  
-  // Depth progression
-  if (lastUserMessage.content.length > 150 && !patterns.includes('emotional')) {
-    followUps.push("What emotions come up when you reflect on that experience?")
-  }
-  
-  // Session-specific
-  if (sessionType === 'music' && lastUserMessage.content.toLowerCase().includes('song')) {
-    followUps.push("What was happening in your life when that song became meaningful?")
-  }
-  
-  return followUps.slice(0, 2)
-}
-
-// CUTTING-EDGE: AI Reasoning Transparency Component
-const AIReasoningIndicator = ({ isGenerating }: { isGenerating: boolean }) => {
-  const [reasoningStep, setReasoningStep] = useState<string>("")
-  
-  useEffect(() => {
-    if (isGenerating) {
-      const steps = [
-        "Analyzing psychological patterns...",
-        "Connecting to established frameworks...", 
-        "Considering conversation history...",
-        "Formulating response with therapeutic depth..."
-      ]
-      
-      let currentStep = 0
-      const interval = setInterval(() => {
-        if (currentStep < steps.length) {
-          setReasoningStep(steps[currentStep])
-          currentStep++
-        }
-      }, 900)
-      
-      return () => clearInterval(interval)
-    } else {
-      setReasoningStep("")
-    }
-  }, [isGenerating])
-  
-  if (!isGenerating || !reasoningStep) return null
-  
-  return (
-    <motion.div 
-      initial={{ opacity: 0, y: 5 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -5 }}
-      className="flex items-center gap-2 text-xs text-zinc-500 mb-2"
-    >
-      <CircleNotch className="h-3 w-3 animate-spin" />
-      <span>{reasoningStep}</span>
-    </motion.div>
-  )
-}
-
-// CUTTING-EDGE: Smart Follow-up Component
-const SmartFollowUps = ({ followUps, onSelect }: { followUps: string[], onSelect: (followUp: string) => void }) => {
-  if (followUps.length === 0) return null
-  
-  return (
-    <motion.div 
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="mt-4 p-3 bg-zinc-900/50 rounded-lg border border-zinc-800"
-    >
-      <div className="flex items-center gap-2 mb-3">
-        <Lightbulb className="h-3 w-3 text-zinc-500" />
-        <p className="text-xs text-zinc-500">Suggested explorations:</p>
-      </div>
-      
-      <div className="space-y-2">
-        {followUps.map((followUp, index) => (
-          <Button
-            key={index}
-            variant="ghost"
-            size="sm"
-            onClick={() => onSelect(followUp)}
-            className="w-full justify-start text-left h-auto py-2 px-3 bg-zinc-800/50 border border-zinc-700/50 text-zinc-400 hover:bg-zinc-800 hover:border-zinc-700 text-xs"
-          >
-            {followUp}
-          </Button>
-        ))}
-      </div>
-    </motion.div>
-  )
-}
-
-// Enhanced markdown formatter for psychological insights
+// Enhanced markdown formatter
 function formatMarkdown(text: string): string {
   return text
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
@@ -349,23 +101,301 @@ function MessageContent({ content, isUser }: { content: string; isUser: boolean 
   )
 }
 
-// Response quality indicator component
-function ResponseQualityIndicator({ score, issues }: { score: number; issues: string[] }) {
-  if (score >= 90) return null
-  
-  const getColor = (score: number) => {
-    if (score >= 80) return "text-zinc-500"
-    if (score >= 60) return "text-zinc-600" 
-    return "text-zinc-700"
+// Audio playback component for messages
+function AudioMessageDisplay({ audioFiles }: { audioFiles: AudioFile[] }) {
+  const [playingIndex, setPlayingIndex] = useState<number | null>(null)
+  const audioElementsRef = useRef<(HTMLAudioElement | null)[]>([])
+
+  const togglePlayback = (index: number) => {
+    const audio = audioElementsRef.current[index]
+    if (!audio) return
+
+    if (playingIndex === index) {
+      audio.pause()
+      setPlayingIndex(null)
+    } else {
+      // Pause all other audio
+      audioElementsRef.current.forEach((el, i) => {
+        if (el && i !== index) {
+          el.pause()
+        }
+      })
+      
+      audio.play()
+      setPlayingIndex(index)
+      
+      audio.addEventListener('ended', () => {
+        setPlayingIndex(null)
+      }, { once: true })
+    }
+  }
+
+  const formatTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins}:${secs.toString().padStart(2, '0')}`
   }
 
   return (
-    <div className={`flex items-center gap-1 text-xs ${getColor(score)}`}>
+    <div className="space-y-2 mt-3">
+      {audioFiles.map((audioFile, index) => (
+        <div key={index} className="flex items-center gap-3 p-3 bg-zinc-800/50 border border-zinc-800 rounded-lg">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => togglePlayback(index)}
+            className="h-8 w-8 text-zinc-400 hover:text-white hover:bg-zinc-700 transition-colors"
+          >
+            {playingIndex === index ? (
+              <Pause className="h-4 w-4" />
+            ) : (
+              <Play className="h-4 w-4" />
+            )}
+          </Button>
+
+          <MusicNote className="h-4 w-4 text-zinc-500" />
+          
+          <div className="flex-1 min-w-0">
+            <div className="text-sm text-zinc-300 truncate font-medium">
+              {audioFile.name}
+            </div>
+            {audioFile.duration && (
+              <div className="text-xs text-zinc-500">
+                {formatTime(Math.floor(audioFile.duration))}
+              </div>
+            )}
+            
+            {/* Show analysis results in message */}
+            {audioFile.analysisResult && (
+              <div className="mt-2 flex flex-wrap gap-1">
+                {audioFile.analysisResult.mood && (
+                  <span className="px-2 py-0.5 bg-zinc-700 text-zinc-300 rounded-full text-xs">
+                    {audioFile.analysisResult.mood}
+                  </span>
+                )}
+                {audioFile.analysisResult.tempo && (
+                  <span className="px-2 py-0.5 bg-zinc-700 text-zinc-300 rounded-full text-xs">
+                    {audioFile.analysisResult.tempo} BPM
+                  </span>
+                )}
+                {audioFile.analysisResult.key && (
+                  <span className="px-2 py-0.5 bg-zinc-700 text-zinc-300 rounded-full text-xs">
+                    Key: {audioFile.analysisResult.key}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+
+          <audio
+            ref={(el) => {
+              audioElementsRef.current[index] = el
+            }}
+            src={audioFile.url}
+            preload="metadata"
+          />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// Enhanced Audio Context Panel
+function AudioContextPanel({ 
+  audioFiles, 
+  onRemoveAudio, 
+  onClearAll, 
+  isContextActive, 
+  onToggleContext 
+}: { 
+  audioFiles: AudioFile[]
+  onRemoveAudio: (index: number) => void
+  onClearAll: () => void
+  isContextActive: boolean
+  onToggleContext: () => void
+}) {
+  const [playingIndex, setPlayingIndex] = useState<number | null>(null)
+  const audioElementsRef = useRef<(HTMLAudioElement | null)[]>([])
+
+  const togglePlayback = (index: number) => {
+    const audio = audioElementsRef.current[index]
+    if (!audio) return
+
+    if (playingIndex === index) {
+      audio.pause()
+      setPlayingIndex(null)
+    } else {
+      audioElementsRef.current.forEach((el, i) => {
+        if (el && i !== index) {
+          el.pause()
+        }
+      })
+      
+      audio.play()
+      setPlayingIndex(index)
+      
+      audio.addEventListener('ended', () => {
+        setPlayingIndex(null)
+      }, { once: true })
+    }
+  }
+
+  const formatTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins}:${secs.toString().padStart(2, '0')}`
+  }
+
+  if (audioFiles.length === 0) return null
+
+  return (
+    <div className="mb-4 bg-zinc-900/80 border border-zinc-800 rounded-lg">
+      {/* Header */}
+      <div className="flex items-center justify-between p-3 border-b border-zinc-800">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <Waveform className="h-4 w-4 text-zinc-400" />
+            <span className="text-sm text-zinc-300 font-medium">Audio Context</span>
+            <span className="px-2 py-0.5 bg-zinc-700 text-zinc-400 rounded-full text-xs">
+              {audioFiles.length} file{audioFiles.length > 1 ? 's' : ''}
+            </span>
+          </div>
+          {isContextActive && (
+            <div className="flex items-center gap-1 text-xs text-green-400">
+              <div className="h-1.5 w-1.5 bg-green-400 rounded-full animate-pulse" />
+              <span>Active in conversation</span>
+            </div>
+          )}
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onToggleContext}
+            className={cn(
+              "text-xs px-2 py-1 h-6",
+              isContextActive 
+                ? "text-green-400 hover:text-green-300 bg-green-400/10 hover:bg-green-400/20" 
+                : "text-zinc-500 hover:text-zinc-300"
+            )}
+          >
+            {isContextActive ? (
+              <>
+                <Eye className="h-3 w-3 mr-1" />
+                Visible
+              </>
+            ) : (
+              <>
+                <EyeSlash className="h-3 w-3 mr-1" />
+                Hidden
+              </>
+            )}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onClearAll}
+            className="text-xs text-zinc-500 hover:text-red-400 hover:bg-red-500/10 px-2 py-1 h-6"
+          >
+            <TrashSimple className="h-3 w-3 mr-1" />
+            Clear All
+          </Button>
+        </div>
+      </div>
+
+      {/* Audio Files */}
+      <div className="p-3 space-y-2 max-h-48 overflow-y-auto">
+        {audioFiles.map((audioFile, index) => (
+          <div key={index} className="group relative">
+            <div className="flex items-center gap-3 p-2 bg-zinc-800/50 border border-zinc-800 rounded-md hover:bg-zinc-800/70 hover:border-zinc-700 transition-all">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => togglePlayback(index)}
+                className="h-8 w-8 text-zinc-400 hover:text-white hover:bg-zinc-700 transition-colors flex-shrink-0"
+              >
+                {playingIndex === index ? (
+                  <Pause className="h-3 w-3" />
+                ) : (
+                  <Play className="h-3 w-3" />
+                )}
+              </Button>
+
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <MusicNote className="h-3 w-3 text-zinc-500 flex-shrink-0" />
+                
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm text-zinc-300 truncate font-medium">
+                    {audioFile.name}
+                  </div>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    {audioFile.duration && (
+                      <div className="text-xs text-zinc-500">
+                        {formatTime(Math.floor(audioFile.duration))}
+                      </div>
+                    )}
+                    {audioFile.analysisResult && (
+                      <div className="text-xs text-zinc-500">• Analyzed</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Condensed Analysis Display */}
+              {audioFile.analysisResult && (
+                <div className="flex flex-wrap gap-1 max-w-xs">
+                  {audioFile.analysisResult.mood && (
+                    <span className="px-1.5 py-0.5 bg-zinc-700/50 text-zinc-400 rounded text-xs">
+                      {audioFile.analysisResult.mood}
+                    </span>
+                  )}
+                  {audioFile.analysisResult.tempo && (
+                    <span className="px-1.5 py-0.5 bg-zinc-700/50 text-zinc-400 rounded text-xs">
+                      {audioFile.analysisResult.tempo}
+                    </span>
+                  )}
+                  {audioFile.analysisResult.key && (
+                    <span className="px-1.5 py-0.5 bg-zinc-700/50 text-zinc-400 rounded text-xs">
+                      {audioFile.analysisResult.key}
+                    </span>
+                  )}
+                </div>
+              )}
+
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onRemoveAudio(index)}
+                className="h-6 w-6 text-zinc-500 hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100"
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            </div>
+
+            {/* Hidden audio element for playback */}
+            <audio
+              ref={(el) => {
+                audioElementsRef.current[index] = el
+              }}
+              src={audioFile.url}
+              preload="metadata"
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// Development quality indicator
+function ResponseQualityIndicator({ score, issues }: { score: number; issues: string[] }) {
+  if (process.env.NODE_ENV !== 'development' || score >= 90) return null
+  
+  return (
+    <div className="flex items-center gap-1 text-xs text-zinc-500">
       <WarningCircle className="h-3 w-3" />
-      <span>Quality: {score}%</span>
-      {issues.length > 0 && (
-        <span className="opacity-75">({issues.length} issues)</span>
-      )}
+      <span>Analysis Quality: {score}% ({issues.length} issues)</span>
     </div>
   )
 }
@@ -373,7 +403,6 @@ function ResponseQualityIndicator({ score, issues }: { score: number; issues: st
 export function Chat() {
   const {
     currentSession,
-    sessions,
     isGenerating,
     setIsGenerating,
     inputText,
@@ -383,48 +412,295 @@ export function Chat() {
     removeSelectedImage,
     clearSelectedImages,
     addMessage,
-    updateLastMessage,
-    currentConversationDepth
+    updateLastMessage
   } = useAppStore()
 
-  const [isStreaming, setIsStreaming] = useState(false)
+  // Enhanced audio state with persistence and context control
+  const [persistentAudioFiles, setPersistentAudioFiles] = useState<AudioFile[]>([])
+  const [audioContextActive, setAudioContextActive] = useState(true)
   const [lastResponseQuality, setLastResponseQuality] = useState<{score: number, issues: string[]} | null>(null)
-  const [smartFollowUps, setSmartFollowUps] = useState<string[]>([])
+  const [isRecording, setIsRecording] = useState(false)
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [recordingTime, setRecordingTime] = useState(0)
   
+  // Refs
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const audioFileInputRef = useRef<HTMLInputElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const recordedChunksRef = useRef<Blob[]>([])
 
-  // CUTTING-EDGE: Generate contextual conversation starters
-  const conversationStarters = currentSession 
-    ? generateContextualStarters(currentSession, sessions, currentSession.type)
-    : []
+  // Check if current session is music psychology
+  const isMusicPsychology = currentSession?.type === 'music'
 
-  // Enhanced validation function
-  const validateAIResponse = (response: string, userMessage: string): boolean => {
-    const violations = validateResponse(response, userMessage)
-    const quality = assessResponseQuality(response, userMessage)
+  // Enhanced audio analysis function with comprehensive data extraction
+  const analyzeAudio = async (file: File): Promise<AudioAnalysisResult | undefined> => {
+    try {
+      setIsAnalyzing(true)
+      const formData = new FormData()
+      formData.append('audio', file)
+
+      const response = await fetch('/api/siren/audio', {
+        method: 'POST',
+        body: formData
+      })
+
+      if (!response.ok) {
+        throw new Error(`Audio analysis failed: ${response.status}`)
+      }
+
+      const result = await response.json()
+      
+      // Enhanced analysis result with all available data
+      const enhancedResult: AudioAnalysisResult = {
+        tempo: result.analysis?.tempo,
+        key: result.analysis?.key,
+        mood: result.analysis?.mood,
+        energy: result.analysis?.energy,
+        valence: result.analysis?.valence,
+        genres: result.analysis?.genres || [],
+        instruments: result.analysis?.instruments || [],
+        summary: result.analysis?.summary,
+        danceability: result.analysis?.danceability,
+        acousticness: result.analysis?.acousticness,
+        speechiness: result.analysis?.speechiness,
+        liveness: result.analysis?.liveness,
+        loudness: result.analysis?.loudness
+      }
+      
+      return enhancedResult
+    } catch (error) {
+      console.error('Audio analysis error:', error)
+      toast.error('Audio analysis failed - continuing without analysis')
+      return undefined
+    } finally {
+      setIsAnalyzing(false)
+    }
+  }
+
+  // Enhanced audio file handling with persistence
+  const handleAudioFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || [])
     
-    setLastResponseQuality(quality)
+    for (const file of files) {
+      if (isValidAudioFile(file)) {
+        if (persistentAudioFiles.length < 5) { // Increased limit
+          const url = URL.createObjectURL(file)
+          
+          // Get audio duration
+          const audio = new Audio(url)
+          const duration = await new Promise<number>((resolve) => {
+            audio.addEventListener('loadedmetadata', () => {
+              resolve(audio.duration)
+            })
+          })
+
+          // Analyze audio with enhanced data extraction
+          const analysisResult = await analyzeAudio(file)
+
+          const audioFile: AudioFile = {
+            file,
+            name: file.name,
+            duration,
+            url,
+            analysisResult
+          }
+          
+          setPersistentAudioFiles(prev => [...prev, audioFile])
+          toast.success(`Audio file analyzed and added to context`)
+        } else {
+          toast.error("Maximum 5 audio files allowed in context")
+        }
+      } else {
+        toast.error(`Invalid file: ${file.name}. Please select an audio file under 50MB.`)
+      }
+    }
+
+    if (audioFileInputRef.current) {
+      audioFileInputRef.current.value = ""
+    }
+  }
+
+  const removePersistentAudioFile = (index: number) => {
+    const audioFile = persistentAudioFiles[index]
+    if (audioFile?.url) {
+      URL.revokeObjectURL(audioFile.url)
+    }
+    setPersistentAudioFiles(prev => prev.filter((_, i) => i !== index))
+    toast.success("Audio file removed from context")
+  }
+
+  const clearAllAudioContext = () => {
+    persistentAudioFiles.forEach(audioFile => {
+      if (audioFile.url) {
+        URL.revokeObjectURL(audioFile.url)
+      }
+    })
+    setPersistentAudioFiles([])
+    setAudioContextActive(true) // Reset to active when cleared
+    toast.success("Audio context cleared")
+  }
+
+  // Recording functions (enhanced with analysis)
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const mediaRecorder = new MediaRecorder(stream)
+      mediaRecorderRef.current = mediaRecorder
+      recordedChunksRef.current = []
+
+      mediaRecorder.addEventListener('dataavailable', (event) => {
+        if (event.data.size > 0) {
+          recordedChunksRef.current.push(event.data)
+        }
+      })
+
+      mediaRecorder.addEventListener('stop', async () => {
+        const blob = new Blob(recordedChunksRef.current, { type: 'audio/webm' })
+        const file = new File([blob], `recording-${Date.now()}.webm`, { type: 'audio/webm' })
+        const url = URL.createObjectURL(blob)
+
+        // Analyze recorded audio
+        const analysisResult = await analyzeAudio(file)
+
+        const audioFile: AudioFile = {
+          file,
+          name: file.name,
+          url,
+          analysisResult
+        }
+
+        setPersistentAudioFiles(prev => [...prev, audioFile])
+        stream.getTracks().forEach(track => track.stop())
+        toast.success("Recording saved, analyzed, and added to context")
+      })
+
+      mediaRecorder.start()
+      setIsRecording(true)
+      setRecordingTime(0)
+
+      recordingIntervalRef.current = setInterval(() => {
+        setRecordingTime(prev => prev + 1)
+      }, 1000)
+
+      toast.success("Recording started")
+    } catch (error) {
+      console.error('Recording error:', error)
+      toast.error("Microphone access denied or unavailable")
+    }
+  }
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop()
+      setIsRecording(false)
+      
+      if (recordingIntervalRef.current) {
+        clearInterval(recordingIntervalRef.current)
+        recordingIntervalRef.current = null
+      }
+    }
+  }
+
+  const formatTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins}:${secs.toString().padStart(2, '0')}`
+  }
+
+  // Enhanced audio context creation for LLM
+  const createEnhancedAudioContext = (audioFiles: AudioFile[]): string => {
+    if (!audioContextActive || audioFiles.length === 0) return ""
     
-    // Generate smart follow-ups after AI response
-    const followUps = generateSmartFollowUps([...currentSession?.messages || [], { role: 'user', content: userMessage }], currentSession?.type || 'personality')
-    setSmartFollowUps(followUps)
+    const analysisTexts = audioFiles.map((audio, index) => {
+      if (audio.analysisResult) {
+        const analysis = audio.analysisResult
+        let analysisText = `\n[Audio ${index + 1}: ${audio.name}]\n`
+        
+        // Core musical elements
+        const coreElements = []
+        if (analysis.mood) coreElements.push(`Mood: ${analysis.mood}`)
+        if (analysis.tempo) coreElements.push(`Tempo: ${analysis.tempo} BPM`)
+        if (analysis.key) coreElements.push(`Key: ${analysis.key}`)
+        if (analysis.energy !== undefined) coreElements.push(`Energy: ${Math.round(analysis.energy * 100)}%`)
+        if (analysis.valence !== undefined) coreElements.push(`Positivity: ${Math.round(analysis.valence * 100)}%`)
+        
+        if (coreElements.length > 0) {
+          analysisText += `Core Elements: ${coreElements.join(', ')}\n`
+        }
+        
+        // Advanced audio features
+        const advancedElements = []
+        if (analysis.danceability !== undefined) advancedElements.push(`Danceability: ${Math.round(analysis.danceability * 100)}%`)
+        if (analysis.acousticness !== undefined) advancedElements.push(`Acoustic: ${Math.round(analysis.acousticness * 100)}%`)
+        if (analysis.speechiness !== undefined) advancedElements.push(`Speech: ${Math.round(analysis.speechiness * 100)}%`)
+        if (analysis.liveness !== undefined) advancedElements.push(`Live Performance: ${Math.round(analysis.liveness * 100)}%`)
+        if (analysis.loudness !== undefined) advancedElements.push(`Loudness: ${analysis.loudness} dB`)
+        
+        if (advancedElements.length > 0) {
+          analysisText += `Audio Features: ${advancedElements.join(', ')}\n`
+        }
+        
+        // Musical context
+        if (analysis.genres && analysis.genres.length > 0) {
+          analysisText += `Genres: ${analysis.genres.join(', ')}\n`
+        }
+        
+        if (analysis.instruments && analysis.instruments.length > 0) {
+          analysisText += `Instrumentation: ${analysis.instruments.join(', ')}\n`
+        }
+        
+        if (analysis.summary) {
+          analysisText += `Summary: ${analysis.summary}\n`
+        }
+        
+        return analysisText
+      }
+      return `\n[Audio ${index + 1}: ${audio.name}]\n(Analysis unavailable)\n`
+    }).join('')
     
-    // Critical violations require immediate intervention
+    return `\n\n═══ AUDIO CONTEXT ACTIVE ═══\nThe user has uploaded ${audioFiles.length} audio file${audioFiles.length > 1 ? 's' : ''} for psychological analysis:${analysisTexts}\n═══ PSYCHOLOGICAL ANALYSIS GUIDANCE ═══\nConsider these musical elements when providing psychological insights:\n- How the musical characteristics reflect their emotional state and creative psychology\n- Connections between audio features (energy, valence, mood) and their psychological patterns\n- How their musical choices reveal personality traits, cultural influences, or creative identity\n- What the combination of technical and emotional elements suggests about their artistic development\n═══ END AUDIO CONTEXT ═══\n`
+  }
+
+  // Validation optimized for your fine-tuned model
+  const validateAnalysisResponse = (response: string, userMessage: string): boolean => {
+    const violations = validatePsychologyAnalysis(response, userMessage)
+    
+    // Development quality tracking
+    if (process.env.NODE_ENV === 'development') {
+      const score = violations.length === 0 ? 100 : Math.max(0, 100 - violations.length * 20)
+      setLastResponseQuality({ score, issues: violations })
+    }
+    
+    // Critical violations require correction
     const criticalViolations = violations.filter(v => v.includes('CRITICAL'))
     if (criticalViolations.length > 0) {
-      console.error('CRITICAL AI Response Violations:', criticalViolations)
+      console.error('CRITICAL Analysis Violations:', criticalViolations)
       
-      const safeResponse = createSafeRedirectResponse(userMessage, violations)
-      updateLastMessage(safeResponse)
+      // Apply automatic correction
+      const correctedResponse = correctAnalysisLanguage(response)
       
-      toast.error("Response corrected for safety")
-      return false
+      // If still problematic, use safe redirect
+      const stillViolating = validatePsychologyAnalysis(correctedResponse, userMessage).filter(v => v.includes('CRITICAL'))
+      if (stillViolating.length > 0) {
+        const safeResponse = createSafeAnalysisResponse(userMessage, violations)
+        updateLastMessage(safeResponse)
+        toast.error("Response corrected for professional boundaries")
+        return false
+      } else {
+        updateLastMessage(correctedResponse)
+        toast.warning("Response auto-corrected for professional language")
+        return true
+      }
     }
     
     if (violations.length > 0) {
-      console.warn('AI Response Warnings:', violations)
+      console.warn('Analysis Quality Issues:', violations)
+      // Apply minor corrections for non-critical issues
+      const improvedResponse = correctAnalysisLanguage(response)
+      updateLastMessage(improvedResponse)
     }
     
     return true
@@ -433,59 +709,91 @@ export function Chat() {
   const sendMessage = async (messageContent?: string) => {
     const contentToSend = messageContent || inputText.trim()
     
-    if (!contentToSend && selectedImages.length === 0) return
+    if (!contentToSend && selectedImages.length === 0 && (!audioContextActive || persistentAudioFiles.length === 0)) return
     if (!currentSession) return
 
     const images = selectedImages
+    const contextAudioFiles = audioContextActive ? persistentAudioFiles : []
 
-    // Clear input immediately for better UX
+    // Clear input but keep persistent audio context
     setInputText("")
     clearSelectedImages()
     setLastResponseQuality(null)
-    setSmartFollowUps([]) // Clear old follow-ups
 
     const imageBase64s = await Promise.all(
       images.map(file => fileToBase64(file))
     )
 
-    // Add user message
+    // Enhanced audio context for AI analysis
+    const audioContext = createEnhancedAudioContext(contextAudioFiles)
+
+    // Add user message with current audio files for display
     addMessage({
       role: "user",
       content: contentToSend,
-      images: imageBase64s
+      images: imageBase64s,
+      audioFiles: contextAudioFiles // Include for message display
     })
 
     setIsGenerating(true)
-    setIsStreaming(true)
 
     try {
-      // Get the appropriate system prompt based on session type
-      const systemPrompt = ANALYSIS_PROMPTS[
+      // Get system prompt for session type
+      const systemPrompt = PSYCHE_SIREN_PROMPTS[
         currentSession.type === "personality" ? "PERSONALITY_PROFILE" :
         currentSession.type === "creative" ? "CREATIVE_ASSESSMENT" :
         currentSession.type === "music" ? "MUSIC_PSYCHOLOGY" :
         "LABEL_INSIGHTS"
       ]
 
-      // Build conversation context (last 6 messages for context management)
-      const recentMessages = currentSession.messages.slice(-6)
-      const conversationHistory = recentMessages.map(msg => ({
-        role: msg.role,
-        content: msg.content
-      }))
+      // Build messages array for your fine-tuned model
+      let messages = []
+      
+      if (currentSession.messages.length === 1) {
+        // First message: use full analysis prompt matching your training format
+        const analysisPrompt = createAnalysisPrompt(systemPrompt, contentToSend + audioContext, currentSession.type)
+        messages.push({
+          role: "user",
+          content: analysisPrompt,
+          images: imageBase64s
+        })
+      } else {
+        // Subsequent messages: maintain context with analysis framework
+        const recentMessages = currentSession.messages.slice(-6) // Keep recent context
+        
+        recentMessages.slice(0, -1).forEach(msg => {
+          messages.push({
+            role: msg.role,
+            content: msg.content
+          })
+        })
+        
+        // Add current message with analysis framework reminder and audio context
+        const contextualPrompt = audioContext 
+          ? `Continue psychological analysis considering the uploaded audio files. Provide 2-3 sentence analysis using psychological frameworks, then ask ONE strategic question.\n\nUSER: ${contentToSend}${audioContext}`
+          : `Continue psychological analysis. Provide 2-3 sentence analysis using psychological frameworks, then ask ONE strategic question.\n\nUSER: ${contentToSend}`
+          
+        messages.push({
+          role: "user", 
+          content: contextualPrompt,
+          images: imageBase64s
+        })
+      }
 
+      // Optimal parameters for your fine-tuned model
       const requestBody = {
-        messages: [
-          { role: "system", content: systemPrompt },
-          ...conversationHistory,
-          { role: "user", content: contentToSend }
-        ],
-        max_tokens: 512,
-        temperature: 0.7,
+        messages,
+        max_tokens: audioContextActive && persistentAudioFiles.length > 0 ? 400 : 300, // More tokens for audio analysis
+        temperature: 1.0,       
+        top_p: 0.95,           
+        top_k: 64,             
+        min_p: 0.0,            
+        do_sample: true,       
+        repetition_penalty: 1.0, 
         stream: false
       }
 
-      // Add empty assistant message for streaming effect
+      // Add empty assistant message for UI
       addMessage({
         role: "assistant",
         content: ""
@@ -508,9 +816,13 @@ export function Chat() {
       if (data.choices && data.choices[0]?.message?.content) {
         const aiResponse = data.choices[0].message.content
         
-        // Validate response before showing to user
-        if (validateAIResponse(aiResponse, contentToSend)) {
-          updateLastMessage(aiResponse)
+        // Validate and potentially correct the response
+        if (validateAnalysisResponse(aiResponse, contentToSend)) {
+          // Response was acceptable or successfully corrected
+          if (!lastResponseQuality || lastResponseQuality.score >= 90) {
+            updateLastMessage(aiResponse)
+          }
+          // If score < 90, response was already corrected in validation
         }
         
       } else {
@@ -518,15 +830,13 @@ export function Chat() {
       }
 
     } catch (error) {
-      console.error("Error sending message:", error)
+      console.error("Error in psychological analysis:", error)
       
-      const errorResponse = "I apologize, but I'm having difficulty processing your message right now. Could you try rephrasing your question or sharing a bit more context about what you'd like to explore?"
-      
+      const errorResponse = "I'm having difficulty with the analysis right now. Could you share a bit more context about what you'd like to explore?"
       updateLastMessage(errorResponse)
-      toast.error("Connection issue - please try again")
+      toast.error("Analysis connection issue - please try again")
     } finally {
       setIsGenerating(false)
-      setIsStreaming(false)
     }
   }
 
@@ -561,10 +871,16 @@ export function Chat() {
     sendMessage(suggestion)
   }
 
-  const handleFollowUpSelect = (followUp: string) => {
-    setInputText(followUp)
-    textareaRef.current?.focus()
-  }
+  // Cleanup audio URLs when component unmounts or audio files change
+  useEffect(() => {
+    return () => {
+      persistentAudioFiles.forEach(audioFile => {
+        if (audioFile.url) {
+          URL.revokeObjectURL(audioFile.url)
+        }
+      })
+    }
+  }, [persistentAudioFiles])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -577,26 +893,32 @@ export function Chat() {
     }
   }, [inputText])
 
+  // Clear audio context when session changes
+  useEffect(() => {
+    if (currentSession?.type !== 'music' && persistentAudioFiles.length > 0) {
+      clearAllAudioContext()
+    }
+  }, [currentSession?.id])
+
   if (!currentSession) {
     return (
       <div className="flex h-full items-center justify-center">
         <div className="text-center space-y-4 max-w-md mx-auto px-6">
           <Brain className="h-8 w-8 mx-auto text-zinc-600" />
           <div>
-            <h2 className="text-lg font-medium text-zinc-300">Welcome to Psyche Siren</h2>
+            <h2 className="text-lg font-medium text-zinc-300">Psyche Siren Analysis</h2>
             <p className="text-zinc-500 mt-2 text-sm leading-relaxed">
-              Professional AI assistant for psychological analysis and creative understanding. 
-              I help explore patterns, provide insights through established frameworks, and guide 
-              self-discovery through strategic questioning.
+              Professional cultural-psychological analysis system. I analyze individual patterns using 
+              established frameworks including personality psychology, cultural psychology, and creative psychology.
             </p>
           </div>
           <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 text-left">
-            <h3 className="text-sm font-medium text-zinc-400 mb-2">Choose your exploration:</h3>
+            <h3 className="text-sm font-medium text-zinc-400 mb-2">Analysis Capabilities:</h3>
             <div className="space-y-2 text-sm text-zinc-500">
-              <div><strong className="text-zinc-400">Personality Profile:</strong> Deep psychological pattern analysis</div>
-              <div><strong className="text-zinc-400">Creative Assessment:</strong> Psychology of creative expression</div>
+              <div><strong className="text-zinc-400">Personality Profile:</strong> MBTI, Big Five, attachment patterns</div>
+              <div><strong className="text-zinc-400">Creative Assessment:</strong> Creative psychology and artistic identity</div>
               <div><strong className="text-zinc-400">Music Psychology:</strong> Musical connection and emotional regulation</div>
-              <div><strong className="text-zinc-400">Industry Insights:</strong> Professional creative dynamics</div>
+              <div><strong className="text-zinc-400">Cultural Analysis:</strong> Cross-cultural psychology and identity formation</div>
             </div>
           </div>
         </div>
@@ -611,18 +933,26 @@ export function Chat() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="flex h-6 w-6 items-center justify-center rounded-md bg-zinc-800">
-              <Brain className="h-3 w-3 text-zinc-500" weight="fill" />
+              {isMusicPsychology ? (
+                <MusicNote className="h-3 w-3 text-zinc-500" weight="fill" />
+              ) : (
+                <Brain className="h-3 w-3 text-zinc-500" weight="fill" />
+              )}
             </div>
             <div>
               <h1 className="text-sm font-medium text-zinc-300">{currentSession.title}</h1>
               <p className="text-xs text-zinc-600">
-                {currentSession.type.charAt(0).toUpperCase() + currentSession.type.slice(1).replace('-', ' ')} Analysis
+                Cultural-Psychological Analysis • {currentSession.type.charAt(0).toUpperCase() + currentSession.type.slice(1).replace('-', ' ')}
+                {isMusicPsychology && " • Audio Analysis"}
+                {audioContextActive && persistentAudioFiles.length > 0 && (
+                  <span className="text-green-400"> • Audio Context Active ({persistentAudioFiles.length})</span>
+                )}
               </p>
             </div>
           </div>
           
           {/* Quality indicator for development */}
-          {lastResponseQuality && process.env.NODE_ENV === 'development' && (
+          {lastResponseQuality && (
             <ResponseQualityIndicator 
               score={lastResponseQuality.score} 
               issues={lastResponseQuality.issues} 
@@ -638,16 +968,19 @@ export function Chat() {
             <div className="text-center space-y-6 py-12">
               <Sparkle className="h-7 w-7 mx-auto text-zinc-600" />
               <div className="max-w-2xl mx-auto">
-                <h3 className="text-base font-medium text-zinc-400">Ready for Analysis</h3>
+                <h3 className="text-base font-medium text-zinc-400">Ready for Psychological Analysis</h3>
                 <p className="text-zinc-600 mt-2 text-sm">
-                  Choose a focus area below or write your own message
+                  {isMusicPsychology 
+                    ? "Share your musical experiences and upload audio files for comprehensive music psychology analysis"
+                    : "Share your experiences for professional psychological and cultural analysis"
+                  }
                 </p>
                 
-                {/* FIXED: Clean conversation starters with proper container */}
+                {/* Conversation starters optimized for your training */}
                 <div className="mt-6 space-y-3">
-                  <p className="text-xs text-zinc-600 mb-4">Suggested starting points:</p>
+                  <p className="text-xs text-zinc-600 mb-4">Analysis starting points:</p>
                   <div className="space-y-3 max-w-xl mx-auto">
-                    {conversationStarters.map((starter, index) => (
+                    {Object.values(CONVERSATION_STARTERS).slice(0, 4).map((starter, index) => (
                       <Button
                         key={index}
                         variant="ghost"
@@ -665,7 +998,10 @@ export function Chat() {
                 
                 <div className="mt-6 pt-4 border-t border-zinc-800">
                   <p className="text-xs text-zinc-600">
-                    Or describe what you'd like to explore in your own words
+                    {isMusicPsychology 
+                      ? "Upload audio files or record music to analyze psychological connections to sound"
+                      : "Or describe your experiences, patterns, or cultural background for analysis"
+                    }
                   </p>
                 </div>
               </div>
@@ -711,12 +1047,24 @@ export function Chat() {
                         ))}
                       </div>
                     )}
+
+                    {message.audioFiles && message.audioFiles.length > 0 && (
+                      <AudioMessageDisplay audioFiles={message.audioFiles} />
+                    )}
                     
                     {message.content ? (
                       <MessageContent content={message.content} isUser={message.role === "user"} />
                     ) : (
-                      message.role === "assistant" && isStreaming && (
-                        <AIReasoningIndicator isGenerating={isStreaming} />
+                      message.role === "assistant" && isGenerating && (
+                        <div className="flex items-center gap-2 text-xs text-zinc-500">
+                          <CircleNotch className="h-3 w-3 animate-spin" />
+                          <span>
+                            {audioContextActive && persistentAudioFiles.length > 0
+                              ? "Analyzing psychological patterns with audio context..."
+                              : "Analyzing psychological patterns..."
+                            }
+                          </span>
+                        </div>
                       )
                     )}
                   </div>
@@ -730,14 +1078,6 @@ export function Chat() {
                   )}
                 </motion.div>
               ))}
-              
-              {/* CUTTING-EDGE: Smart follow-up suggestions */}
-              {!isGenerating && smartFollowUps.length > 0 && (
-                <SmartFollowUps 
-                  followUps={smartFollowUps}
-                  onSelect={handleFollowUpSelect}
-                />
-              )}
             </>
           )}
           <div ref={messagesEndRef} />
@@ -779,9 +1119,92 @@ export function Chat() {
             )}
           </AnimatePresence>
 
-          {/* CUTTING-EDGE: AI Reasoning during generation */}
-          {isGenerating && (
-            <AIReasoningIndicator isGenerating={isGenerating} />
+          {/* Enhanced Audio Context Panel */}
+          <AudioContextPanel
+            audioFiles={persistentAudioFiles}
+            onRemoveAudio={removePersistentAudioFile}
+            onClearAll={clearAllAudioContext}
+            isContextActive={audioContextActive}
+            onToggleContext={() => {
+              setAudioContextActive(!audioContextActive)
+              toast.success(audioContextActive ? "Audio context hidden from conversation" : "Audio context visible in conversation")
+            }}
+          />
+
+          {/* Audio Upload Section - Music Psychology Only */}
+          {isMusicPsychology && (
+            <AnimatePresence>
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="mb-4"
+              >
+                <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4 space-y-3">
+                  {/* Audio Controls Header */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Waveform className="h-4 w-4 text-zinc-400" />
+                      <span className="text-sm text-zinc-400">Audio Upload</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {isAnalyzing && (
+                        <div className="flex items-center gap-2 text-zinc-500">
+                          <CircleNotch className="h-3 w-3 animate-spin" />
+                          <span className="text-xs">Analyzing...</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Recording and Upload Controls */}
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={isRecording ? stopRecording : startRecording}
+                      disabled={isGenerating || isAnalyzing}
+                      className={cn(
+                        "flex items-center gap-2 px-3 py-2 rounded-lg border border-zinc-700 text-zinc-400 hover:text-white hover:bg-zinc-800 hover:border-zinc-600 transition-all",
+                        isRecording && "bg-red-500/10 border-red-500/30 text-red-400 hover:text-red-300"
+                      )}
+                    >
+                      {isRecording ? (
+                        <>
+                          <Stop className="h-4 w-4" />
+                          <span className="text-xs font-medium">{formatTime(recordingTime)}</span>
+                        </>
+                      ) : (
+                        <>
+                          <Microphone className="h-4 w-4" />
+                          <span className="text-xs">Record</span>
+                        </>
+                      )}
+                    </Button>
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => audioFileInputRef.current?.click()}
+                      disabled={isGenerating || isAnalyzing}
+                      className="flex items-center gap-2 px-3 py-2 rounded-lg border border-zinc-700 text-zinc-400 hover:text-white hover:bg-zinc-800 hover:border-zinc-600 transition-all"
+                    >
+                      <Upload className="h-4 w-4" />
+                      <span className="text-xs">Upload Audio</span>
+                    </Button>
+                  </div>
+
+                  <input
+                    ref={audioFileInputRef}
+                    type="file"
+                    accept="audio/*"
+                    multiple
+                    onChange={handleAudioFileSelect}
+                    className="hidden"
+                  />
+                </div>
+              </motion.div>
+            </AnimatePresence>
           )}
 
           {/* Input Controls */}
@@ -792,7 +1215,11 @@ export function Chat() {
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Share your thoughts, experiences, or creative work for professional psychological analysis..."
+                placeholder={
+                  isMusicPsychology 
+                    ? "Share your musical experiences, emotional connections to sound, or upload audio files for psychological analysis..."
+                    : "Share your cultural background, creative experiences, personality patterns, or professional dynamics for psychological analysis..."
+                }
                 className="min-h-[44px] max-h-32 resize-none pr-12 bg-zinc-900 border-zinc-800 text-zinc-300 placeholder:text-zinc-600"
                 disabled={isGenerating}
               />
@@ -809,7 +1236,7 @@ export function Chat() {
             
             <Button
               onClick={() => sendMessage()}
-              disabled={isGenerating || (!inputText.trim() && selectedImages.length === 0)}
+              disabled={isGenerating || (!inputText.trim() && selectedImages.length === 0 && (!audioContextActive || persistentAudioFiles.length === 0))}
               className="h-11 px-4 bg-zinc-800 text-zinc-400 hover:bg-zinc-700 border border-zinc-700 disabled:opacity-50"
             >
               {isGenerating ? (
@@ -820,7 +1247,7 @@ export function Chat() {
             </Button>
           </div>
 
-          {/* Loading Indicator */}
+          {/* Enhanced Loading Indicator */}
           {isGenerating && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
@@ -829,7 +1256,12 @@ export function Chat() {
               className="mt-3 flex items-center gap-2 text-zinc-500"
             >
               <CircleNotch className="h-3 w-3 animate-spin" />
-              <span className="text-xs">Professional psychological analysis in progress...</span>
+              <span className="text-xs">
+                {audioContextActive && persistentAudioFiles.length > 0
+                  ? `Analyzing musical psychology patterns with ${persistentAudioFiles.length} audio file${persistentAudioFiles.length > 1 ? 's' : ''}...`
+                  : "Cultural-psychological analysis in progress..."
+                }
+              </span>
             </motion.div>
           )}
 
@@ -843,7 +1275,33 @@ export function Chat() {
           />
 
           <p className="mt-2 text-xs text-zinc-600">
-            Upload images of creative work for multimodal analysis. Press Enter to send, Shift+Enter for new line.
+            {isMusicPsychology 
+              ? "Upload audio files for music psychology analysis. Share musical experiences and emotional connections to sound."
+              : "Upload creative work images for multimodal analysis. Cultural background, personality patterns, and creative experiences welcome."
+            }
+            {/* Enhanced audio context indicator */}
+            {audioContextActive && persistentAudioFiles.length > 0 && (
+              <span className="block mt-1 text-green-400">
+                🎵 {persistentAudioFiles.length} audio file{persistentAudioFiles.length > 1 ? 's' : ''} active in conversation context - 
+                <button 
+                  onClick={() => setAudioContextActive(false)}
+                  className="ml-1 underline hover:no-underline"
+                >
+                  hide context
+                </button>
+              </span>
+            )}
+            {!audioContextActive && persistentAudioFiles.length > 0 && (
+              <span className="block mt-1 text-zinc-500">
+                🎵 {persistentAudioFiles.length} audio file{persistentAudioFiles.length > 1 ? 's' : ''} hidden from conversation - 
+                <button 
+                  onClick={() => setAudioContextActive(true)}
+                  className="ml-1 underline hover:no-underline"
+                >
+                  show context
+                </button>
+              </span>
+            )}
           </p>
         </div>
       </div>

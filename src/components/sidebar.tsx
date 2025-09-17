@@ -27,18 +27,18 @@ const analysisTypes = [
     color: "text-blue-400"
   },
   {
-    id: "creative",
-    title: "Creative Psychology", 
-    description: "Psychological foundations of creative expression and artistic development",
-    icon: PaintBrushIcon,
-    color: "text-purple-400"
-  },
-  {
     id: "music",
     title: "Musical Psychology",
     description: "Emotional regulation, identity formation, and psychological connection through music",
     icon: MusicNoteIcon,
     color: "text-green-400"
+  },
+  {
+    id: "creative",
+    title: "Creative Psychology", 
+    description: "Psychological foundations of creative expression and artistic development",
+    icon: PaintBrushIcon,
+    color: "text-purple-400"
   },
   {
     id: "label-insights",

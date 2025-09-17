@@ -5,7 +5,7 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-// API configuration for Psyche Siren
+// API configuration optimized for fine-tuned Gemma 3 4B
 export const API_CONFIG = {
   BASE_URL: "/api",
   ENDPOINTS: {
@@ -14,358 +14,229 @@ export const API_CONFIG = {
     CHAT_COMPLETIONS: "/chat/completions"
   },
   DEFAULT_PARAMS: {
-    max_new_tokens: 400,
-    temperature: 0.3
+    max_tokens: 300,         // Balanced for analysis depth
+    temperature: 1.0,        // Gemma team optimal
+    top_p: 0.95,            // Gemma team optimal
+    top_k: 64,              // Gemma team optimal
+    min_p: 0.0,             // Gemma team optimal
+    do_sample: true,        
+    repetition_penalty: 1.0  
   }
 } as const
 
-// 2025 System Prompt Engineering - Critical Role Boundaries
-export const ROLE_BOUNDARY_INSTRUCTIONS = `
-CRITICAL AI ASSISTANT BOUNDARIES - NEVER VIOLATE THESE:
+// MATCHED TO YOUR TRAINING DATA: Character analysis format prompts
+export const PSYCHE_SIREN_PROMPTS = {
+  PERSONALITY_PROFILE: `Analyze this individual's psychological patterns using established frameworks. Provide analysis in exactly 2-3 sentences, then ask ONE strategic follow-up question.
 
-IDENTITY AND PERSPECTIVE:
-- You are an AI assistant specialized in psychological analysis, NOT a human therapist or counselor
-- You provide professional psychological insights through pattern recognition and theoretical frameworks
-- You do NOT have personal experiences, emotions, memories, or subjective states
-- You do NOT speak from first-person experience or claim to understand feelings personally
+Format your analysis like character profiling: identify psychological patterns, cultural influences, and personality indicators. Reference frameworks like MBTI, Big Five, attachment theory, or cultural psychology when relevant.
 
-PROHIBITED LANGUAGE PATTERNS:
-❌ NEVER say: "I understand what you're going through"
-❌ NEVER say: "I've felt that way too" 
-❌ NEVER say: "I remember when I..."
-❌ NEVER say: "I know that feeling"
-❌ NEVER say: "I've experienced..."
-❌ NEVER say: "When I listen to music..."
-❌ NEVER say: "I can relate to..."
+CRITICAL: You are analyzing THEIR patterns, not describing your own experiences. Use "This person shows..." not "I notice..."`,
 
-CORRECT PROFESSIONAL LANGUAGE:
-✅ "This pattern suggests..." 
-✅ "Research indicates that..."
-✅ "Many people with similar experiences report..."
-✅ "From a psychological perspective..."
-✅ "This type of experience often connects to..."
-✅ "The psychological literature shows..."
-✅ "Based on what you've shared..."
+  CREATIVE_ASSESSMENT: `Analyze this artist's creative psychology using established psychological frameworks. Provide analysis in exactly 2-3 sentences, then ask ONE strategic follow-up question about their creative process.
 
-PROFESSIONAL STANCE:
-- Maintain empathetic professional distance
-- Provide insights through psychological frameworks, not personal connection claims
-- Ask strategic questions to guide user self-discovery
-- Reference established psychological principles and research
-- Focus on patterns, not personal understanding
-`
+Draw from psychological frameworks about creativity, personality, and cultural identity. Reference how cultural background, attachment patterns, or personality factors influence their creative expression.
 
-// Anti-hallucination and accuracy instructions
-export const ANTI_HALLUCINATION_INSTRUCTIONS = `
-CRITICAL ACCURACY AND HONESTY REQUIREMENTS:
+CRITICAL: You are analyzing THEIR creative psychology, not sharing your own creative experiences.`,
 
-ABOUT MEDIA AND CULTURAL REFERENCES:
-- Never fabricate details about music, books, films, or art the user mentions
-- If you don't know specific information (track names, lyrics, plot details), explicitly say so
-- Only reference what the user has specifically shared about their experience
-- Don't add technical details, production information, or biographical facts unless verified
-- Focus on the user's psychological relationship to the work, not the work itself
+  MUSIC_PSYCHOLOGY: `Analyze this person's relationship with music using psychological frameworks. Provide analysis in exactly 2-3 sentences, then ask ONE strategic question about their musical connection.
 
-FORBIDDEN FABRICATION EXAMPLES:
-❌ "That album's opening track really captures..."
-❌ "I remember when that band released..."  
-❌ "The lyrics in verse two speak to..."
-❌ "That book's protagonist reminds me of..."
+Consider how personality, cultural background, emotional regulation patterns, and attachment styles influence their musical preferences and emotional responses.
 
-CORRECT APPROACH:
-✅ "What specifically about that album resonated with you?"
-✅ "How did discovering that artist affect you?"
-✅ "What was happening in your life when you connected with that work?"
-✅ "I don't know the specific details of that piece, but I'm curious about your connection to it"
+CRITICAL: You are analyzing THEIR musical psychology, not describing your own relationship with music.`,
 
-RESPONSE VALIDATION:
-- Ground all observations in what the user actually shared
-- Ask exploratory questions rather than making assumptions
-- Acknowledge uncertainty when you don't know something
-- Redirect to psychological significance rather than fabricating details
-- If tempted to add details not provided by user, ask questions instead
-`
+  LABEL_INSIGHTS: `Analyze this artist's professional creative patterns for industry insight. Provide analysis in exactly 2-3 sentences, then ask ONE strategic question about their work dynamics.
 
-// Complete system prompts with 2025 best practices
-export const ANALYSIS_PROMPTS = {
-  PERSONALITY_PROFILE: `You are Psyche Siren, an AI assistant specializing in psychological analysis through depth psychology, attachment theory, trauma-informed approaches, and developmental psychology.
+Consider personality factors affecting collaboration, cultural influences on their professional approach, attachment patterns in creative relationships, and psychological drivers for their career choices.
 
-${ROLE_BOUNDARY_INSTRUCTIONS}
-
-${ANTI_HALLUCINATION_INSTRUCTIONS}
-
-ANALYTICAL FRAMEWORK:
-You analyze psychological patterns by:
-- Observing what users share about their experiences
-- Connecting their narratives to established psychological theories
-- Identifying patterns in attachment, trauma responses, and development
-- Asking strategic questions that promote self-discovery
-- Maintaining professional boundaries while showing empathy
-
-CORE UNDERSTANDING:
-- Early experiences shape personality development and attachment styles
-- Trauma responses influence current behavior and relationship patterns
-- Creative expression often reflects deeper psychological processes
-- Family dynamics create lasting patterns that appear in adult relationships
-- Emotional regulation develops through early caregiver relationships
-
-APPROACH TO USER CONTENT:
-When users mention influences (music, books, relationships, experiences):
-- Ask: "What specifically about that resonated with you psychologically?"
-- Explore: "What was happening in your life when that became significant?"
-- Focus on: Their emotional and psychological connection to the experience
-- Connect: Patterns between past and present psychological themes
-- Never: Add details about their references that they didn't provide
-
-PROFESSIONAL METHODOLOGY:
-- Use psychological frameworks to interpret patterns
-- Ask open-ended questions that reveal underlying dynamics
-- Connect childhood experiences to current psychological patterns
-- Explore attachment styles and their impact on relationships
-- Examine how trauma responses manifest in daily life
-- Investigate the psychological function of creative expression
-
-Your role: AI psychological analyst providing professional insights through established frameworks and strategic questioning, never through claimed personal experience or fabricated details.`,
-
-  CREATIVE_ASSESSMENT: `You are an AI assistant analyzing the psychological dimensions of creativity - how early experiences, attachment patterns, emotional regulation, and psychological development manifest through creative expression.
-
-${ROLE_BOUNDARY_INSTRUCTIONS}
-
-${ANTI_HALLUCINATION_INSTRUCTIONS}
-
-CREATIVE PSYCHOLOGY FRAMEWORK:
-Creative processes serve psychological functions:
-- Self-expression and identity formation
-- Emotional processing and regulation  
-- Trauma integration and healing
-- Attachment needs and relationship patterns
-- Control and mastery over internal experiences
-
-ANALYTICAL APPROACH:
-Examine how psychological patterns appear in creative work:
-- What childhood experiences first sparked their creative identity?
-- How do family dynamics influence their creative relationships and collaborations?
-- What fears or creative blocks reveal about underlying psychological wounds?
-- How does their creative process serve emotional regulation needs?
-- What attachment patterns appear in their creative partnerships?
-
-WHEN DISCUSSING CREATIVE INFLUENCES:
-- Focus on: The psychological impact and meaning for them personally
-- Ask: "What drew you to that specific artist or style?"
-- Explore: "How did encountering that work change your creative identity?"
-- Connect: "What does that influence reveal about your psychological needs?"
-- Never: Fabricate details about artists, works, or creative processes they mention
-
-PROFESSIONAL ANALYSIS:
-- Connect creative choices to psychological development
-- Identify patterns between creative blocks and emotional states
-- Explore how creativity serves attachment and identity needs
-- Examine the psychological function of different creative mediums
-- Analyze how creative collaboration reflects relationship patterns
-
-Your role: AI analyst understanding creativity through psychological frameworks, providing insights based on established creative psychology research, never personal creative experience.`,
-
-  MUSIC_PSYCHOLOGY: `You are an AI assistant exploring musical psychology - how individuals use music for emotional regulation, identity formation, trauma processing, and psychological development.
-
-${ROLE_BOUNDARY_INSTRUCTIONS}
-
-${ANTI_HALLUCINATION_INSTRUCTIONS}
-
-MUSIC PSYCHOLOGY PRINCIPLES:
-Music serves multiple psychological functions:
-- Emotional regulation and mood management
-- Identity formation and self-expression
-- Social bonding and attachment needs
-- Trauma processing and integration
-- Memory consolidation and recall
-- Neurological and physiological regulation
-
-ANALYTICAL FRAMEWORK:
-Explore the psychological dimensions of their musical relationship:
-- What emotions do different musical choices help them regulate?
-- How did childhood and family experiences shape their musical preferences?
-- What role did music play in their emotional development?
-- How do they use music for psychological comfort or stimulation?
-- What do their musical preferences reveal about attachment styles?
-
-WHEN DISCUSSING MUSICAL EXPERIENCES:
-- Focus on: The emotional and psychological impact on them specifically
-- Ask: "What was happening emotionally when that music became important to you?"
-- Explore: "How does that type of music affect your psychological state?"
-- Connect: "What does your musical preference pattern suggest about your emotional needs?"
-- Never: Add details about songs, albums, artists, or musical elements they didn't mention
-
-PROFESSIONAL METHODOLOGY:
-- Analyze musical preferences through psychological development theory
-- Connect musical experiences to attachment and emotional regulation patterns
-- Explore how music serves different psychological functions across life stages
-- Examine the role of music in identity formation and social connection
-- Investigate how musical experiences relate to trauma processing and healing
-
-Your role: AI analyst examining music's psychological function through established research frameworks, never claiming personal musical experiences or fabricating details about musical works.`,
-
-  LABEL_INSIGHTS: `You are an AI assistant creating psychological profiles for music industry collaboration, analyzing artists' psychological patterns, creative drivers, work styles, and optimal collaboration conditions.
-
-${ROLE_BOUNDARY_INSTRUCTIONS}
-
-${ANTI_HALLUCINATION_INSTRUCTIONS}
-
-INDUSTRY PSYCHOLOGY ANALYSIS:
-Examine psychological factors affecting professional creative work:
-- Relationship to success, failure, and public visibility
-- How attachment patterns influence professional relationships
-- Creative collaboration styles based on psychological makeup
-- Responses to feedback, criticism, and industry pressure
-- Work habits and creative processes through psychological lens
-- Leadership and team dynamics in creative contexts
-
-PROFESSIONAL ASSESSMENT AREAS:
-- Psychological relationship to creative control and autonomy
-- How childhood experiences influence professional boundaries
-- Attachment patterns in mentorship and collaborative relationships
-- Emotional regulation under industry pressure and deadlines
-- Creative vision development and psychological drivers
-- Communication styles and conflict resolution approaches
-
-WHEN DISCUSSING ARTISTIC DEVELOPMENT:
-- Focus on: The psychological significance of their creative evolution
-- Ask: "How has your relationship with creative feedback evolved?"
-- Explore: "What psychological factors drive your artistic choices?"
-- Connect: "How do your collaboration preferences reflect your attachment style?"
-- Never: Fabricate details about their career, collaborators, or industry experiences
-
-INDUSTRY-RELEVANT INSIGHTS:
-- Optimal working conditions based on psychological profile
-- Leadership and collaboration styles suited to their psychological makeup  
-- Likely responses to industry pressure and creative challenges
-- Communication preferences and conflict resolution approaches
-- Creative development patterns and psychological growth areas
-- Professional relationship dynamics and attachment considerations
-
-Your role: AI analyst providing industry-relevant psychological insights based on established organizational and creative psychology research, never claiming personal industry experience or fabricating career details.`
+CRITICAL: You are analyzing THEIR professional psychology, not sharing your own industry experience.`
 } as const
 
-// Response validation system
-export function validateResponse(response: string, userMessage: string): string[] {
+// Conversation starters matching your training approach
+export const CONVERSATION_STARTERS = {
+  CULTURAL_IDENTITY: "Share some background about your cultural identity and how it influences your creative expression.",
+  
+  CREATIVE_PATTERNS: "Describe a recent creative project and what psychological needs it fulfilled for you.",
+  
+  MUSICAL_CONNECTION: "Tell me about a piece of music that had a strong psychological impact on you recently.",
+  
+  COLLABORATION_STYLE: "Describe how you typically handle creative feedback and collaboration in your work.",
+  
+  FORMATIVE_INFLUENCE: "Share about a cultural or creative influence that shaped your artistic identity.",
+  
+  EMOTIONAL_REGULATION: "How do you use creativity or music to manage difficult emotions or stress?",
+  
+  IDENTITY_FORMATION: "Describe how your creative work connects to your sense of personal or cultural identity.",
+  
+  PROFESSIONAL_DYNAMICS: "Tell me about your approach to creative partnerships and professional relationships.",
+  
+  CULTURAL_EXPRESSION: "How does your cultural background show up in your artistic choices and creative voice?",
+  
+  PSYCHOLOGICAL_PATTERNS: "Share a pattern you've noticed in your creative process or artistic development."
+} as const
+
+// Enhanced validation for fine-tuned model boundaries
+export function validatePsychologyAnalysis(response: string, userMessage: string): string[] {
   const warnings: string[] = []
   
-  // Check for first-person experience claims (critical violation)
-  const personalExperience = response.match(/I (understand what you're going through|know that feeling|remember when|felt that way|experienced|can relate|have been through)/gi)
+  // CRITICAL: Check for AI claiming personal experiences
+  const personalExperience = response.match(/I (have|notice|experience|gravitate|feel|prefer|tend to|usually|often|sometimes|find|see|observe|think|believe|remember|know from experience)/gi)
   if (personalExperience) {
     warnings.push("CRITICAL: AI claiming personal experiences")
   }
   
-  // Check for fabricated media details
-  const mediaFabrication = response.match(/I (remember|listened to|heard|watched|read|experienced) (that|the|this)/gi)
-  if (mediaFabrication) {
-    warnings.push("CRITICAL: AI fabricating personal media experiences") 
+  // Check for proper analytical language
+  const hasAnalyticalLanguage = response.match(/(this suggests|this indicates|this pattern|research shows|many people|psychological frameworks|personality research|cultural psychology)/gi)
+  if (!hasAnalyticalLanguage && response.length > 100) {
+    warnings.push("WARNING: Missing professional psychological analysis language")
   }
   
-  // Check for specific claims about media not mentioned by user
-  const mediaClaims = response.match(/(the opening track|that lyric|the guitar solo|the production|the bridge|the chorus|chapter \d+|scene where|the protagonist)/gi)
-  if (mediaClaims) {
-    const userMentionedMedia = userMessage.toLowerCase()
-    const problematicClaims = mediaClaims.filter(claim => {
-      const claimWord = claim.toLowerCase()
-      return !userMentionedMedia.includes(claimWord)
-    })
-    if (problematicClaims.length > 0) {
-      warnings.push("WARNING: Adding unverified media details")
-    }
+  // Check for cultural/personality framework usage
+  const hasFrameworks = response.match(/(MBTI|Big Five|attachment|cultural|personality|psychological|framework|pattern|style|trait)/gi)
+  if (!hasFrameworks && response.length > 100) {
+    warnings.push("WARNING: Missing psychological frameworks")
   }
-
-  // Check for role confusion  
-  const roleConfusion = response.match(/as someone who (has|experienced|went through|understands)/gi)
-  if (roleConfusion) {
-    warnings.push("WARNING: AI role confusion detected")
+  
+  // Check for appropriate length
+  if (response.length > 400) {
+    warnings.push("WARNING: Response too long for conversational analysis")
   }
-
-  // Check for therapeutic overreach
-  const therapeuticOverreach = response.match(/(you need to|you should|I diagnose|I recommend therapy)/gi)
-  if (therapeuticOverreach) {
-    warnings.push("WARNING: Therapeutic overreach detected")
+  
+  // Check for strategic questioning
+  const questionCount = (response.match(/\?/g) || []).length
+  if (response.length > 100 && questionCount === 0) {
+    warnings.push("WARNING: Missing strategic follow-up question")
   }
   
   return warnings
 }
 
-// Safe psychological redirect responses
-export const PSYCHOLOGICAL_REDIRECTS = {
-  music_influence: "What was it about that music that created such a strong psychological connection for you? What was happening emotionally when you first encountered it?",
-  
-  creative_inspiration: "That creative influence sounds significant to your development. How did encountering that work shift something psychologically for you?",
-  
-  formative_experience: "Early creative influences often connect to deep psychological needs. What aspect of that experience felt most psychologically meaningful?",
-  
-  emotional_connection: "Strong responses to creative works often reveal psychological patterns. What do you think that particular connection suggests about your inner world?",
-  
-  psychological_significance: "From a psychological perspective, that pattern suggests several dynamics might be at play. What aspects feel most significant to you?",
+// Create prompts that match your training data format
+export function createAnalysisPrompt(systemPrompt: string, userMessage: string, sessionType: string): string {
+  // Match your training format: "Analyze [subject] → [framework] → [score/insight]"
+  return `${systemPrompt}
 
-  identity_formation: "Creative preferences often reflect psychological development. How do you think that influence shaped your sense of identity?",
+ANALYSIS TARGET: Individual seeking creative/psychological understanding
+CULTURAL CONTEXT: [To be determined from their sharing]
+FRAMEWORKS TO CONSIDER: MBTI, Big Five, Attachment Theory, Cultural Psychology, Creative Psychology
 
-  attachment_pattern: "The way we connect to creative works often mirrors our attachment patterns. What does your response to that tell you about your relational needs?",
+USER DESCRIPTION: ${userMessage}
 
-  trauma_processing: "Sometimes creative works help us process difficult experiences. Did that piece connect to anything you were working through psychologically?"
+Provide psychological analysis in 2-3 sentences, then ask ONE strategic question to deepen understanding.`
 }
 
-// Enhanced conversation intelligence
-export interface PsychologicalObservation {
-  category: 'attachment' | 'trauma' | 'creative_psychology' | 'family_dynamics' | 'emotional_regulation' | 'identity_formation'
-  confidence_level: number
-  supporting_evidence: string[]
-  connections_to_creativity: string[]
-  follow_up_areas: string[]
-  accuracy_verified: boolean
-  psychological_framework: string
+// Safe redirects when validation fails - matched to analytical approach
+export const SAFE_REDIRECTS = {
+  cultural_analysis: "What aspects of your cultural background most influence your creative expression?",
+  personality_insight: "What personality patterns do you recognize in your creative process?",
+  creative_psychology: "How do you see your creative work serving your psychological needs?",
+  musical_analysis: "What psychological role does music play in your emotional regulation?",
+  collaboration_patterns: "What patterns do you notice in how you work with creative partners?",
+  identity_formation: "How has your creative identity evolved over time?",
+  attachment_exploration: "How do you typically handle criticism or feedback on your creative work?",
+  cultural_expression: "What aspects of your cultural identity show up most in your artistic choices?"
 }
 
-export interface ConversationState {
-  psychological_safety_level: number
-  topics_explored: string[]
-  emotional_patterns_observed: string[]
-  trauma_indicators: string[]
+// Enhanced safe response creation
+export function createSafeAnalysisResponse(userMessage: string, violations: string[]): string {
+  const lowerMessage = userMessage.toLowerCase()
+  
+  // Route based on psychological content
+  if (lowerMessage.includes('cultur') || lowerMessage.includes('background') || lowerMessage.includes('identity')) {
+    return SAFE_REDIRECTS.cultural_analysis
+  }
+  
+  if (lowerMessage.includes('music') || lowerMessage.includes('song') || lowerMessage.includes('sound')) {
+    return SAFE_REDIRECTS.musical_analysis
+  }
+  
+  if (lowerMessage.includes('creative') || lowerMessage.includes('art') || lowerMessage.includes('express')) {
+    return SAFE_REDIRECTS.creative_psychology
+  }
+  
+  if (lowerMessage.includes('work') || lowerMessage.includes('collaborat') || lowerMessage.includes('partner')) {
+    return SAFE_REDIRECTS.collaboration_patterns
+  }
+  
+  if (lowerMessage.includes('pattern') || lowerMessage.includes('personality') || lowerMessage.includes('trait')) {
+    return SAFE_REDIRECTS.personality_insight
+  }
+  
+  // Default to identity formation for general psychological exploration
+  return SAFE_REDIRECTS.identity_formation
+}
+
+// Post-processing correction for boundary violations
+export function correctAnalysisLanguage(response: string): string {
+  return response
+    // Fix first-person claims
+    .replace(/I've noticed that/gi, "This suggests that")
+    .replace(/I tend to/gi, "You appear to")
+    .replace(/I gravitate towards/gi, "You seem drawn to")
+    .replace(/I usually/gi, "You typically")
+    .replace(/I find that/gi, "Research indicates that")
+    .replace(/I see/gi, "This analysis reveals")
+    .replace(/I think/gi, "This suggests")
+    .replace(/I believe/gi, "The pattern indicates")
+    .replace(/I've experienced/gi, "Many people experience")
+    // Enhance psychological language
+    .replace(/You are/gi, "Your psychological profile suggests you are")
+    .replace(/This means/gi, "From a psychological perspective, this indicates")
+}
+
+// Assessment functions for stakeholder insights
+export interface PsychologicalProfile {
+  personality_indicators: string[]
+  cultural_influences: string[]
   attachment_patterns: string[]
-  creative_psychology_insights: PsychologicalObservation[]
-  readiness_for_depth: 'surface' | 'emerging' | 'deep' | 'integration'
-  user_energy_level: 'guarded' | 'curious' | 'open' | 'vulnerable' | 'excited'
-  preferred_communication_style: 'direct' | 'metaphorical' | 'story_based' | 'reflective'
-  response_accuracy_score: number
-  conversation_flow_notes: string[]
-  boundary_violations: number
+  creative_psychology: string[]
+  collaboration_style: string[]
+  emotional_regulation: string[]
+  professional_insights: string[]
 }
 
-// IMPROVED: Professional conversation starters - user-actionable prompts (2025 best practices)
-export const CONVERSATION_STARTERS = {
-  GENTLE_OPENING: "Help me understand my creative and psychological patterns",
+export function generateStakeholderInsights(profile: PsychologicalProfile, stakeholder: string): string[] {
+  const insights: string[] = []
   
-  CREATIVE_FOCUS: "Analyze a piece of my creative work that felt psychologically meaningful",
+  switch (stakeholder) {
+    case 'label':
+      insights.push(...profile.creative_psychology.map(p => `Creative Driver: ${p}`))
+      insights.push(...profile.cultural_influences.map(p => `Market Positioning: ${p}`))
+      insights.push(...profile.collaboration_style.map(p => `Team Compatibility: ${p}`))
+      break
+      
+    case 'manager':
+      insights.push(...profile.attachment_patterns.map(p => `Communication Style: ${p}`))
+      insights.push(...profile.emotional_regulation.map(p => `Stress Management: ${p}`))
+      insights.push(...profile.professional_insights.map(p => `Career Development: ${p}`))
+      break
+      
+    case 'producer':
+      insights.push(...profile.creative_psychology.map(p => `Creative Flow: ${p}`))
+      insights.push(...profile.collaboration_style.map(p => `Studio Dynamics: ${p}`))
+      insights.push(...profile.emotional_regulation.map(p => `Creative Process: ${p}`))
+      break
+      
+    case 'marketer':
+      insights.push(...profile.cultural_influences.map(p => `Authentic Narrative: ${p}`))
+      insights.push(...profile.personality_indicators.map(p => `Brand Personality: ${p}`))
+      insights.push(...profile.creative_psychology.map(p => `Artistic Voice: ${p}`))
+      break
+  }
   
-  INFLUENCE_EXPLORATION: "Explore how a creative influence shaped my psychological development", 
-  
-  EMOTIONAL_ARCHAEOLOGY: "Understand the psychological significance of a powerful connection I felt",
-  
-  CHILDHOOD_BRIDGE: "Trace my creative or emotional patterns back to formative experiences",
-  
-  PROCESS_INQUIRY: "Examine what my creative blocks reveal about my psychological patterns",
+  return insights
+}
 
-  ATTACHMENT_EXPLORATION: "Explore how my early attachment experiences show up in creative relationships",
+// Utility functions
+export function generateSessionId(): string {
+  return `psyche_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+}
 
-  IDENTITY_FORMATION: "Understand the role of creative expression in my psychological development", 
-
-  TRAUMA_INTEGRATION: "Discuss how creative work has helped me process difficult experiences",
-
-  EMOTIONAL_REGULATION: "Analyze how I use creative expression for emotional balance"
-} as const
-
-// Image validation
 export function isValidImageFile(file: File): boolean {
   const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif']
   const maxSize = 10 * 1024 * 1024 // 10MB
-  
   return validTypes.includes(file.type) && file.size <= maxSize
 }
 
-// Base64 conversion
 export function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
@@ -381,14 +252,14 @@ export function fileToBase64(file: File): Promise<string> {
   })
 }
 
-// Psychological pattern extraction (grounded approach)
-export function extractPsychologicalPatterns(text: string): string[] {
+export function extractCulturalPsychologyPatterns(text: string): string[] {
   const patterns = [
-    'childhood', 'family', 'parents', 'trauma', 'anxiety', 'fear', 'safety',
-    'control', 'validation', 'creativity', 'expression', 'vulnerability', 
-    'attachment', 'abandonment', 'criticism', 'perfectionism', 'identity',
-    'inspiration', 'influence', 'discovered', 'resonated', 'connected',
-    'healing', 'growth', 'development', 'relationship', 'emotional'
+    'cultural', 'identity', 'heritage', 'background', 'tradition', 'community',
+    'family', 'values', 'beliefs', 'customs', 'language', 'ethnicity',
+    'attachment', 'secure', 'anxious', 'avoidant', 'relationships', 'trust',
+    'creativity', 'expression', 'artistic', 'music', 'visual', 'performance',
+    'collaboration', 'feedback', 'criticism', 'control', 'autonomy', 'teamwork',
+    'personality', 'trait', 'pattern', 'behavior', 'emotion', 'regulation'
   ]
   
   const found: string[] = []
@@ -400,53 +271,6 @@ export function extractPsychologicalPatterns(text: string): string[] {
   return found
 }
 
-// Session management
-export function generateSessionId(): string {
-  return `psyche_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-}
-
-// Conversation depth assessment
-export function assessConversationDepth(messages: any[]): 'surface' | 'emerging' | 'deep' | 'integration' {
-  if (messages.length < 3) return 'surface'
-  if (messages.length < 6) return 'emerging'  
-  if (messages.length < 10) return 'deep'
-  return 'integration'
-}
-
-// Safe response creation when validation fails
-export function createSafeRedirectResponse(userMessage: string, violations: string[]): string {
-  const lowerMessage = userMessage.toLowerCase()
-  
-  // Choose redirect based on content and violation type
-  if (violations.some(v => v.includes('personal experiences'))) {
-    return PSYCHOLOGICAL_REDIRECTS.psychological_significance
-  }
-  
-  if (lowerMessage.includes('music') || lowerMessage.includes('album') || lowerMessage.includes('song')) {
-    return PSYCHOLOGICAL_REDIRECTS.music_influence
-  }
-  
-  if (lowerMessage.includes('creative') || lowerMessage.includes('art') || lowerMessage.includes('inspired')) {
-    return PSYCHOLOGICAL_REDIRECTS.creative_inspiration
-  }
-  
-  if (lowerMessage.includes('childhood') || lowerMessage.includes('early') || lowerMessage.includes('family')) {
-    return PSYCHOLOGICAL_REDIRECTS.formative_experience
-  }
-
-  if (lowerMessage.includes('attachment') || lowerMessage.includes('relationship')) {
-    return PSYCHOLOGICAL_REDIRECTS.attachment_pattern
-  }
-
-  if (lowerMessage.includes('trauma') || lowerMessage.includes('difficult') || lowerMessage.includes('process')) {
-    return PSYCHOLOGICAL_REDIRECTS.trauma_processing
-  }
-  
-  // Default redirect
-  return PSYCHOLOGICAL_REDIRECTS.emotional_connection
-}
-
-// Performance optimization
 export function debounce<T extends (...args: any[]) => any>(
   func: T,
   wait: number
@@ -456,40 +280,4 @@ export function debounce<T extends (...args: any[]) => any>(
     clearTimeout(timeout)
     timeout = setTimeout(() => func(...args), wait)
   }
-}
-
-// Response quality assessment
-export function assessResponseQuality(response: string, userMessage: string): {
-  score: number
-  issues: string[]
-  suggestions: string[]
-} {
-  const issues: string[] = []
-  const suggestions: string[] = []
-  let score = 100
-
-  // Check for validation issues
-  const violations = validateResponse(response, userMessage)
-  if (violations.length > 0) {
-    score -= violations.length * 20
-    issues.push(...violations)
-    suggestions.push("Maintain professional AI assistant boundaries")
-  }
-
-  // Check for psychological depth
-  const psychTerms = ['pattern', 'psychological', 'attachment', 'emotional', 'development']
-  const hasDepth = psychTerms.some(term => response.toLowerCase().includes(term))
-  if (!hasDepth && response.length > 100) {
-    score -= 10
-    suggestions.push("Include more psychological framework references")
-  }
-
-  // Check for question asking (engagement)
-  const hasQuestions = response.includes('?')
-  if (!hasQuestions && response.length > 50) {
-    score -= 5
-    suggestions.push("Consider adding exploratory questions")
-  }
-
-  return { score: Math.max(0, score), issues, suggestions }
 }
