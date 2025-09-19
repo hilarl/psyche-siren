@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useRef } from "react"
+import React, { useState, useRef, useCallback } from "react"
 import { motion, AnimatePresence } from "motion/react"
 import { 
   Microphone,
@@ -59,13 +59,13 @@ export function AudioUpload({
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const recordedChunksRef = useRef<Blob[]>([])
 
-  const isValidAudioFile = (file: File): boolean => {
+  const isValidAudioFile = useCallback((file: File): boolean => {
     const validTypes = ['audio/mp3', 'audio/wav', 'audio/m4a', 'audio/aac', 'audio/ogg', 'audio/webm']
     const maxSize = 50 * 1024 * 1024 // 50MB
     return validTypes.includes(file.type) && file.size <= maxSize
-  }
+  }, [])
 
-  const analyzeAudio = async (file: File): Promise<AudioAnalysisResult | undefined> => {
+  const analyzeAudio = useCallback(async (file: File): Promise<AudioAnalysisResult | undefined> => {
     try {
       setIsAnalyzing(true)
       const formData = new FormData()
@@ -89,9 +89,9 @@ export function AudioUpload({
     } finally {
       setIsAnalyzing(false)
     }
-  }
+  }, [])
 
-  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || [])
     
     for (const file of files) {
@@ -130,9 +130,9 @@ export function AudioUpload({
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
     }
-  }
+  }, [selectedAudioFiles.length, isValidAudioFile, analyzeAudio, onAddAudioFile])
 
-  const startRecording = async () => {
+  const startRecording = useCallback(async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       const mediaRecorder = new MediaRecorder(stream)
@@ -177,9 +177,9 @@ export function AudioUpload({
       console.error('Recording error:', error)
       toast.error("Microphone access denied or unavailable")
     }
-  }
+  }, [analyzeAudio, onAddAudioFile])
 
-  const stopRecording = () => {
+  const stopRecording = useCallback(() => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop()
       setIsRecording(false)
@@ -191,15 +191,15 @@ export function AudioUpload({
       
       toast.success("Recording saved")
     }
-  }
+  }, [isRecording])
 
-  const formatTime = (seconds: number): string => {
+  const formatTime = useCallback((seconds: number): string => {
     const mins = Math.floor(seconds / 60)
     const secs = seconds % 60
     return `${mins}:${secs.toString().padStart(2, '0')}`
-  }
+  }, [])
 
-  const togglePlayback = (index: number) => {
+  const togglePlayback = useCallback((index: number) => {
     const audio = audioElementsRef.current[index]
     if (!audio) return
 
@@ -221,7 +221,11 @@ export function AudioUpload({
         setPlayingIndex(null)
       }, { once: true })
     }
-  }
+  }, [playingIndex])
+
+  const handleRemoveAudioFile = useCallback((index: number) => {
+    onRemoveAudioFile(index)
+  }, [onRemoveAudioFile])
 
   return (
     <div className="space-y-3">
@@ -339,7 +343,7 @@ export function AudioUpload({
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => onRemoveAudioFile(index)}
+                    onClick={() => handleRemoveAudioFile(index)}
                     className="h-6 w-6 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800"
                   >
                     <X className="h-3 w-3" />

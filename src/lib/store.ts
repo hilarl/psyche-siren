@@ -20,6 +20,60 @@ export interface AudioAnalysisResult {
   summary?: string
 }
 
+export interface VisualFile {
+  file: File
+  name: string
+  type: 'image' | 'video'
+  url: string
+  duration?: number
+  analysisResult?: VisualAnalysisResult
+}
+
+export interface VisualAnalysisResult {
+  dominant_colors?: string[]
+  composition_style?: string
+  emotional_tone?: string
+  art_movement?: string
+  visual_complexity?: number
+  symbolic_elements?: string[]
+  cultural_markers?: string[]
+  psychological_themes?: string[]
+  aesthetic_preference?: string
+  creative_maturity?: string
+  summary?: string
+}
+
+export interface DocumentFile {
+  file: File
+  name: string
+  type: 'pdf' | 'txt' | 'doc' | 'docx' | 'md' | 'other'
+  url: string
+  size: number
+  pageCount?: number
+  analysisResult?: DocumentAnalysisResult
+}
+
+export interface DocumentAnalysisResult {
+  emotional_tone?: string
+  communication_style?: string
+  personality_indicators?: string[]
+  cognitive_patterns?: string[]
+  themes?: string[]
+  writing_complexity?: number
+  formality_level?: string
+  creativity_markers?: string[]
+  psychological_insights?: string[]
+  summary?: string
+  word_count?: number
+  page_count?: number
+  language_patterns?: {
+    sentence_length_avg?: number
+    vocabulary_complexity?: string
+    punctuation_style?: string
+    paragraph_structure?: string
+  }
+}
+
 export interface Message {
   id: string
   role: 'user' | 'assistant'
@@ -27,6 +81,8 @@ export interface Message {
   timestamp: Date
   images?: string[]
   audioFiles?: AudioFile[]
+  visualFiles?: VisualFile[]
+  documentFiles?: DocumentFile[]
   analysisType?: string
   emotionalMarkers?: string[]
   psychologicalPatterns?: string[]
@@ -67,7 +123,7 @@ export interface AnalysisSession {
   messages: Message[]
   createdAt: Date
   updatedAt: Date
-  type: 'personality' | 'creative' | 'music' | 'label-insights'
+  type: 'personality' | 'creative' | 'music' | 'visual' | 'label-insights'
   conversationState: ConversationState
   psychologicalProfile?: {
     formativeExperiences: string[]
@@ -230,15 +286,16 @@ export const useAppStore = create<AppState>()(
         console.log('Store createNewSession called with type:', type) // ADDED: Debug log
         
         const analysisTypeNames = {
-          'personality': 'Personality Profile',
+          'personality': 'Personality Modeling',
           'creative': 'Creative Assessment',
-          'music': 'Music Psychology',
+          'music': 'Audio Analysis',
+          'visual': 'Visual Analysis',
           'label-insights': 'Industry Insights'
         }
 
         const newSession: AnalysisSession = {
           id: `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          title: analysisTypeNames[type] || 'Psychology Analysis',
+          title: analysisTypeNames[type] || 'Intelligence Analysis',
           messages: [],
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -471,6 +528,21 @@ export const useAppStore = create<AppState>()(
                 name: audio.name,
                 duration: audio.duration,
                 analysisResult: audio.analysisResult
+                // Exclude file and url as they're not serializable
+              })),
+              visualFiles: msg.visualFiles?.map(visual => ({
+                name: visual.name,
+                type: visual.type,
+                duration: visual.duration,
+                analysisResult: visual.analysisResult
+                // Exclude file and url as they're not serializable
+              })),
+              documentFiles: msg.documentFiles?.map(document => ({
+                name: document.name,
+                type: document.type,
+                size: document.size,
+                pageCount: document.pageCount,
+                analysisResult: document.analysisResult
                 // Exclude file and url as they're not serializable
               }))
             }))

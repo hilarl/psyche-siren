@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "canton-network",
+  "private_key_id": "8ebfe36ae0d6ab0c7aba0674f32563595eeedbde",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCrXn0zfcvF1t+d\nCnBRRjT4fKQ9bBlfGAlw6xxE8irkQV2xfJj6bqHyBdyhLUcL5tpklEunxIEUL4ZL\nw587/cmZ5+r2ehwyKGi25M4xwNOAz2CS4kx1UpXY5OmK38y2fZoJ2mL+DWxrbXxB\nJZ9VSkmv3nKgdWGndlAgxmr8k8U+Anj0d9IqZ+3JDBOp7A9drGj8rYRsYlXKVoWd\nzNHGwxKuwBN5oXC5V1H41ufWoxv1e7BczFTeLqPy+5T7kx6ixcKJivqNIc+Fvx8P\n5bvK10LkxCQp7s7HNkQ4cK4XsDEXXwKS+9HZyd1AW8UfbMwIdC9RvClnFko3QJwx\ntXgwhVKHAgMBAAECggEANbV7j/PRNcROeS2YXiCe4XJPF2EV4pPqAZXuWj176+YA\ns2vVlkeuQehMaceDCNvlfrhrrb0Mp4LtmDlLYsX7tVzWa0GCLMY1a3zyku1YXHqi\nTebXB75GcJ/uAjR6OIfNC2GCvRT/8ftyggiEk3qg9ZnGWzvuy0lte5g0V80IeJJS\ndozUH+tCGtNGKOkKwKOFy9Yv9jjjUHlfmSN5YCnJt5XMiM14gXh8GErou/XQzgoC\nrBPiiixwHg7ksk81YA9Wat8ZHe3qBjEpFdSkkeT1KajHfXnXc8dMYQW7CTb89MIU\n1BVrn7iYgLVwzseRY8x9X8eObCxcLm/UXYwKln/7YQKBgQDXaiajm467gu/rvSs+\n/xNDNeu5gnWfbLGiEVNSkv1U7guhDrZVVbIQ0Li97+N9aXGzxhWkOTXXf8cwGrcN\n+XnNZtTwIVoNUzig30uxwbH2naho2VWn+2ZBd9N10mq9wSkxJZ+HfcR/15f/G8r1\nFuLPxXjKaPCu7kVIdhiiUEE+ZQKBgQDLp/Buj6dd+EVSsnvewaExjMbuGwUr54gS\nh5m4lrFtXv9GtpJZxQw7toNauPNodRI0JlxfNRAAhCrWbj8g+QEYjeDQxuzmfV3F\ncZb323XfqcuAm8+uISDScJ9DWe95q98NbKJwSLmIxBKsYvLAHlAzEygGDoOgb16A\nYoTBGul4ewKBgFu4riUhuj+rO/8TeBOFxqzqi6lcnDq6rFQGroTNY6LDDR6Rxh9F\nsuEoDlGJkEK5IBnc8SAQ4BUXKjgYV/NSU4ObEnYArXhZBBaznWZdxCnu7WNfjvJM\nwDiGDfrwElUjpydvDqNBcObCZMzSB7Qd/4taWNlOn5TMjaGR72FFbNJlAoGAWbqd\noWjjufBoQr5m+0deySEYiNIY3jY96sQaA41JkUG4waQxKSI7eJe6mh9BB3YFVjrM\nmhob+c5BvYaHg/SR+gqQ0gvDVu5HgXXBqWTlM21xPzHnN/Zaqr16PkeCzp3eQeDq\nVQSF0m9pNtDF2cXBWi+Hg9ujPO20umYtzZMY6L8CgYEAotZ87lC9mngQFf975D8a\nIpmUfNcqyFLsxzxtgX/VvMIyw5QO8CFTAG8bg4pJcR4bUqq2MbQhD2szoedfSCkE\n6gwHdtspwcr6eEK4RZ29eV7M36Nc7ORi9Hz38QqYZmuHidJQIOzD8Z1eKYD2JuzS\nZDCOV0Jc7sxIEpSuolwKlUk=\n-----END PRIVATE KEY-----\n",
+  "client_email": "canton-validator-db-sa@canton-network.iam.gserviceaccount.com",
+  "client_id": "116766200531973401026",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/canton-validator-db-sa%40canton-network.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

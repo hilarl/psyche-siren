@@ -44,6 +44,12 @@ Consider how personality, cultural background, emotional regulation patterns, an
 
 CRITICAL: You are analyzing THEIR musical psychology, not describing your own relationship with music.`,
 
+  VISUAL_ANALYSIS: `Analyze this person's visual and aesthetic psychology using established frameworks. Provide analysis in exactly 2-3 sentences, then ask ONE strategic question about their visual expression.
+
+Consider how personality, cultural background, aesthetic preferences, and creative identity influence their visual choices and artistic expression. Reference psychological frameworks about visual perception, creativity, and cultural identity.
+
+CRITICAL: You are analyzing THEIR visual psychology, not describing your own aesthetic experiences.`,
+
   LABEL_INSIGHTS: `Analyze this artist's professional creative patterns for industry insight. Provide analysis in exactly 2-3 sentences, then ask ONE strategic question about their work dynamics.
 
 Consider personality factors affecting collaboration, cultural influences on their professional approach, attachment patterns in creative relationships, and psychological drivers for their career choices.
@@ -51,8 +57,9 @@ Consider personality factors affecting collaboration, cultural influences on the
 CRITICAL: You are analyzing THEIR professional psychology, not sharing your own industry experience.`
 } as const
 
-// Conversation starters matching your training approach
+// Enhanced conversation starters with creative guidance and predictive insights
 export const CONVERSATION_STARTERS = {
+  // Background & Identity
   CULTURAL_IDENTITY: "Share some background about your cultural identity and how it influences your creative expression.",
   
   CREATIVE_PATTERNS: "Describe a recent creative project and what psychological needs it fulfilled for you.",
@@ -61,15 +68,22 @@ export const CONVERSATION_STARTERS = {
   
   COLLABORATION_STYLE: "Describe how you typically handle creative feedback and collaboration in your work.",
   
+  // Real-time Creative Guidance & Analysis
+  CURRENT_PROJECT_ANALYSIS: "Walk me through something you're working on right now - what creative or strategic challenges are you facing?",
+  
+  CREATIVE_DECISION_SUPPORT: "Describe a creative decision you need to make and what guidance would help you move forward.",
+  
+  // Strategic & Predictive Insights
+  CAREER_TRAJECTORY: "What creative direction are you considering, and what insights would help guide your artistic evolution?",
+  
+  AUDIENCE_STRATEGY: "Tell me about your target audience and creative goals - what strategic advice would be most valuable?",
+  
+  // Additional Options
   FORMATIVE_INFLUENCE: "Share about a cultural or creative influence that shaped your artistic identity.",
   
   EMOTIONAL_REGULATION: "How do you use creativity or music to manage difficult emotions or stress?",
   
   IDENTITY_FORMATION: "Describe how your creative work connects to your sense of personal or cultural identity.",
-  
-  PROFESSIONAL_DYNAMICS: "Tell me about your approach to creative partnerships and professional relationships.",
-  
-  CULTURAL_EXPRESSION: "How does your cultural background show up in your artistic choices and creative voice?",
   
   PSYCHOLOGICAL_PATTERNS: "Share a pattern you've noticed in your creative process or artistic development."
 } as const
@@ -124,7 +138,7 @@ USER DESCRIPTION: ${userMessage}
 Provide psychological analysis in 2-3 sentences, then ask ONE strategic question to deepen understanding.`
 }
 
-// Safe redirects when validation fails - matched to analytical approach
+// Safe redirects when validation fails - matched to creative guidance approach
 export const SAFE_REDIRECTS = {
   cultural_analysis: "What aspects of your cultural background most influence your creative expression?",
   personality_insight: "What personality patterns do you recognize in your creative process?",
@@ -133,12 +147,37 @@ export const SAFE_REDIRECTS = {
   collaboration_patterns: "What patterns do you notice in how you work with creative partners?",
   identity_formation: "How has your creative identity evolved over time?",
   attachment_exploration: "How do you typically handle criticism or feedback on your creative work?",
-  cultural_expression: "What aspects of your cultural identity show up most in your artistic choices?"
+  cultural_expression: "What aspects of your cultural identity show up most in your artistic choices?",
+  current_work_analysis: "Walk me through something you're working on right now and what challenges you're facing.",
+  creative_guidance: "What creative guidance or strategic advice would be most valuable for your current projects?",
+  predictive_insights: "What future trends or audience insights would help guide your creative direction?",
+  career_strategy: "What strategic advice would help you navigate your creative career path?"
 }
 
 // Enhanced safe response creation
 export function createSafeAnalysisResponse(userMessage: string, violations: string[]): string {
   const lowerMessage = userMessage.toLowerCase()
+  
+  // Check for real-time/current work indicators first
+  if (lowerMessage.includes('working on') || lowerMessage.includes('right now') || lowerMessage.includes('current') || lowerMessage.includes('today')) {
+    return SAFE_REDIRECTS.current_work_analysis
+  }
+  
+  if (lowerMessage.includes('decision') || lowerMessage.includes('choose') || lowerMessage.includes('stuck') || lowerMessage.includes('should i')) {
+    return SAFE_REDIRECTS.creative_guidance
+  }
+  
+  if (lowerMessage.includes('advice') || lowerMessage.includes('guidance') || lowerMessage.includes('help') || lowerMessage.includes('direction')) {
+    return SAFE_REDIRECTS.creative_guidance
+  }
+  
+  if (lowerMessage.includes('future') || lowerMessage.includes('predict') || lowerMessage.includes('trend') || lowerMessage.includes('audience')) {
+    return SAFE_REDIRECTS.predictive_insights
+  }
+  
+  if (lowerMessage.includes('career') || lowerMessage.includes('strategy') || lowerMessage.includes('planning') || lowerMessage.includes('next step')) {
+    return SAFE_REDIRECTS.career_strategy
+  }
   
   // Route based on psychological content
   if (lowerMessage.includes('cultur') || lowerMessage.includes('background') || lowerMessage.includes('identity')) {
@@ -234,6 +273,12 @@ export function generateSessionId(): string {
 export function isValidImageFile(file: File): boolean {
   const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif']
   const maxSize = 10 * 1024 * 1024 // 10MB
+  return validTypes.includes(file.type) && file.size <= maxSize
+}
+
+export function isValidVideoFile(file: File): boolean {
+  const validTypes = ['video/mp4', 'video/webm', 'video/ogg', 'video/avi', 'video/mov', 'video/wmv']
+  const maxSize = 100 * 1024 * 1024 // 100MB
   return validTypes.includes(file.type) && file.size <= maxSize
 }
 
