@@ -10,7 +10,7 @@
 !.yarn/releases
 !.yarn/versions
 
-db-sa-key.json
+*-sa-key.json
 
 # testing
 /coverage
